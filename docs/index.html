@@ -1,0 +1,1906 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Financial Calculator</title>
+<meta name="description" content="금리스왑 · 통화선도 · 옵션 · PRS · 내재파생 사채 · 금리커브 · 재무계산기">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#F4F6FA" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0B0F19" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="재무계산기">
+<meta name="format-detection" content="telephone=no">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap">
+<style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style>
+<style>
+/* Layout: phone = one column (ticket, inputs, simulator, charts); PC ≥1080px = inputs left, results right.
+   Direction "Fluent": soft blue-grey ground with two faint glows, white 18px cards on layered soft shadows,
+   one navy→indigo gradient result card per screen, sliding pill tabs, short ease-out motion only where it gives feedback. */
+:root{
+  --bg:#F4F6FA; --surface:#FFFFFF; --ink:#0F1B33; --bg-ink:#FFFFFF; --muted:#5E6B82; --line:#E3E8F0; --chip:#EEF2F8;
+  --accent:#3561E0; --accent-soft:#E7EDFC; --usd:#7AA6F0; --pos:#0F8A55; --neg:#D2433A;
+  --field:#F8FAFD; --navy:#0F1B33; --navy-2:#1E3A6B; --navy-edge:transparent;
+  --hero-a:#0F1F45; --hero-b:#2B4BB0; --glow-1:rgba(80,120,255,.10); --glow-2:rgba(120,90,255,.07);
+  --sh-1:0 1px 2px rgba(16,28,56,.04),0 1px 1px rgba(16,28,56,.03);
+  --sh-2:0 2px 4px rgba(16,28,56,.04),0 14px 32px -12px rgba(16,28,56,.22);
+  --sh-3:0 24px 64px -16px rgba(16,28,56,.35);
+  --shadow:var(--sh-1); --shadow-up:var(--sh-3);
+  --font-ui:"IBM Plex Sans KR",system-ui,-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  --font-num:"Geist","IBM Plex Sans KR",system-ui,-apple-system,"Segoe UI","Malgun Gothic",sans-serif;
+  --font-serif:var(--font-ui);
+  --font-mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0B0F19; --surface:#131A29; --ink:#ECF0F8; --bg-ink:#0B0F19; --muted:#93A0B8; --line:#232C3F; --chip:#1A2234;
+  --accent:#86A7FF; --accent-soft:#1C2A52; --usd:#6FC6F5; --pos:#4FD394; --neg:#FF8A80;
+  --field:#0F1522; --navy:#ECF0F8; --navy-2:#1E3A6B; --navy-edge:#232C3F;
+  --hero-a:#16264F; --hero-b:#3150B8; --glow-1:rgba(80,120,255,.12); --glow-2:rgba(140,90,255,.08);
+  --sh-1:0 1px 2px rgba(0,0,0,.35); --sh-2:0 2px 4px rgba(0,0,0,.3),0 14px 32px -12px rgba(0,0,0,.6); --sh-3:0 24px 64px -16px rgba(0,0,0,.7);
+  --shadow:var(--sh-1); --shadow-up:var(--sh-3); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0B0F19; --surface:#131A29; --ink:#ECF0F8; --bg-ink:#0B0F19; --muted:#93A0B8; --line:#232C3F; --chip:#1A2234;
+  --accent:#86A7FF; --accent-soft:#1C2A52; --usd:#6FC6F5; --pos:#4FD394; --neg:#FF8A80;
+  --field:#0F1522; --navy:#ECF0F8; --navy-2:#1E3A6B; --navy-edge:#232C3F;
+  --hero-a:#16264F; --hero-b:#3150B8; --glow-1:rgba(80,120,255,.12); --glow-2:rgba(140,90,255,.08);
+  --sh-1:0 1px 2px rgba(0,0,0,.35); --sh-2:0 2px 4px rgba(0,0,0,.3),0 14px 32px -12px rgba(0,0,0,.6); --sh-3:0 24px 64px -16px rgba(0,0,0,.7);
+  --shadow:var(--sh-1); --shadow-up:var(--sh-3); color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{overflow-x:hidden;overscroll-behavior-x:none;-webkit-text-size-adjust:100%;text-size-adjust:100%}
+@supports (overflow:clip){ body{overflow-x:clip} } /* body가 따로 가로 스크롤 상자가 되지 않게 (배율 변경 뒤 좌우 밀림 방지) */
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-ui);font-size:15px;line-height:1.5;max-width:100%;position:relative;word-break:keep-all;overflow-wrap:break-word}
+.app{overflow-x:clip}
+.app{max-width:560px;margin:0 auto;padding-inline:16px;padding-block:12px 48px;display:flex;flex-direction:column;gap:16px}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+h1{font-size:19px;font-weight:700;margin:0;letter-spacing:-.01em}
+.chip{font:500 12px/1 var(--font-ui);padding:6px 10px;border-radius:999px;border:1px solid var(--line);color:var(--muted);display:inline-flex;gap:6px;align-items:center;white-space:nowrap}
+.chip i{width:7px;height:7px;border-radius:50%;background:var(--muted);display:inline-block}
+.chip.py i{background:var(--pos)} .chip.loading i{background:var(--usd);animation:pulse 1s infinite alternate}
+@keyframes pulse{to{opacity:.3}}
+@media (prefers-reduced-motion:reduce){.chip.loading i{animation:none}}
+nav.tabs{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);padding-block:6px;display:grid;grid-template-columns:repeat(3,1fr);gap:4px}
+nav.tabs button{font:600 14px var(--font-ui);padding:10px 0;border:1px solid var(--line);background:var(--surface);color:var(--muted);border-radius:10px;cursor:pointer}
+nav.tabs button[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:var(--surface)}
+button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+section.panel{display:flex;flex-direction:column;gap:16px}
+/* result ticket */
+.ticket{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px 16px;display:flex;flex-direction:column;gap:14px}
+.ticket .eyebrow{font-size:12px;letter-spacing:.06em;color:var(--muted);display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.npv{font:500 clamp(26px,8vw,34px)/1.1 var(--font-num);font-variant-numeric:tabular-nums;letter-spacing:-.02em;word-break:break-all}
+.npv.pos{color:var(--pos)} .npv.neg{color:var(--neg)}
+.npv small{font:500 14px var(--font-ui);color:var(--muted);margin-left:4px}
+.side{font-size:13px;color:var(--muted)}
+.side b{font-weight:600;color:var(--ink)}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px 16px;border-top:1px dashed var(--line);padding-top:12px}
+.stat{display:flex;flex-direction:column;gap:2px;min-width:0}
+.stat span{font-size:12px;color:var(--muted)}
+.stat b{font:500 15px var(--font-num);font-variant-numeric:tabular-nums;word-break:keep-all;overflow-wrap:anywhere}
+.err{color:var(--neg);font-size:14px}
+/* forms */
+fieldset{border:0;margin:0;padding:0;min-width:0;min-inline-size:0;display:flex;flex-direction:column;gap:10px}
+legend{font-size:13px;font-weight:600;color:var(--muted);letter-spacing:.04em;padding:0;margin-bottom:8px}
+.group{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 16px 16px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.grid .full{grid-column:1/-1}
+label.f{display:flex;flex-direction:column;gap:4px;min-width:0;font-size:12.5px;color:var(--muted)}
+label.f input,label.f select{font:500 16px var(--font-num);display:block;box-sizing:border-box;max-width:100%;font-variant-numeric:tabular-nums;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:9px 10px;width:100%;min-width:0;appearance:none;-webkit-appearance:none}
+label.f select{font-family:var(--font-ui);background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);background-position:calc(100% - 15px) 55%,calc(100% - 10px) 55%;background-size:5px 5px;background-repeat:no-repeat;padding-right:26px}
+.hint{font-size:12px;color:var(--muted);font-family:var(--font-num)}
+.legtitle{display:flex;align-items:center;gap:8px}
+.dot{width:8px;height:8px;border-radius:2px;display:inline-block}
+/* charts & tables */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 12px}
+.card h2{font-size:14px;margin:0 4px 8px;font-weight:600}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin:0 4px 6px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+svg.chart{width:100%;height:auto;display:block}
+/* 그래프 글자: 화면에 보이는 크기를 PRS 막대그래프 축(11.5px / PC 12.5px)과 같게 맞춤 (--fs는 JS가 viewBox 배율로 계산) */
+svg.chart text{font:var(--fs,20px) var(--font-num);fill:var(--muted)}
+svg.chart text.ax{font:var(--fs2,19px) var(--font-ui);fill:var(--muted)}
+svg.chart text.be{font:600 var(--fs2,19.5px) var(--font-ui)}
+svg.chart text.lab{font:var(--fs2,19px) var(--font-ui);fill:var(--ink)}
+svg.sensc text.be,svg.sensc text.ax{paint-order:stroke;stroke:var(--surface);stroke-width:4px;stroke-linejoin:round}
+details{background:var(--surface);border:1px solid var(--line);border-radius:14px}
+summary{cursor:pointer;padding:13px 16px;font-weight:600;font-size:14px;list-style:none;display:flex;justify-content:space-between;gap:8px}
+summary::after{content:"펼치기";font-weight:400;font-size:12px;color:var(--muted)}
+details[open] summary::after{content:"접기"}
+.tablewrap{overflow-x:auto;border-top:1px solid var(--line);overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch;max-width:100%}
+input[type=date]{-webkit-appearance:none;appearance:none;min-width:0;min-height:2.6em;line-height:1.3}
+input[type=date]::-webkit-date-and-time-value{text-align:left;margin:0}
+input[type=date]::-webkit-calendar-picker-indicator{margin-left:auto}
+.grid>*,.col>*,fieldset>*{min-width:0}
+table{border-collapse:collapse;font:12px var(--font-num);font-variant-numeric:tabular-nums;width:100%}
+th,td{padding:7px 10px;text-align:right;white-space:nowrap;border-bottom:1px solid var(--line)}
+th{font-family:var(--font-ui);font-weight:600;color:var(--muted);background:var(--bg);position:sticky;top:0}
+td:first-child,th:first-child{text-align:left}
+tr.past td{color:var(--muted)}
+.curve-table input{font:500 16px var(--font-num);width:84px;text-align:right;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:5px 6px}
+.note{font-size:13px;color:var(--muted);margin:0;max-width:65ch}
+.actions{display:flex;gap:8px;flex-wrap:wrap}
+.btn{font:600 13px var(--font-ui);padding:9px 14px;border-radius:9px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer}
+.btn:active{background:var(--accent-soft)}
+.market .grid{align-items:end}
+.mkt-btn{display:flex}
+.mkt-btn .btn{width:100%;padding-block:10px}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--surface)}
+.btn.primary:active{opacity:.85;background:var(--accent)}
+label.check{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink)}
+label.check input{width:18px;height:18px;accent-color:var(--accent)}
+.mkt-status{font-size:13px;margin-top:10px;display:flex;flex-direction:column;gap:2px}
+.mkt-status:empty{display:none}
+.mkt-status b{font-family:var(--font-num);font-weight:500}
+.mkt-status .warn{color:var(--neg)}
+.mkt-status .hint,#mkt-range{font-family:var(--font-ui)}
+.src{font-size:12px;color:var(--muted)}
+.src b{font-weight:600;color:var(--ink)}
+.fair{font-size:14px;color:var(--ink);display:flex;flex-direction:column;gap:2px}
+.fair span{color:var(--muted);font-size:12.5px}
+.fair b{font:500 15px var(--font-num);font-variant-numeric:tabular-nums}
+.delta{font:500 13px var(--font-num);color:var(--muted)}
+.delta .tag{font-family:var(--font-ui);font-weight:600;font-size:11.5px;letter-spacing:.04em;padding:2px 7px;border-radius:999px;background:var(--accent-soft);color:var(--accent);margin-right:6px}
+.shift fieldset{gap:14px}
+.slider{display:flex;flex-direction:column;gap:6px}
+.srow{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.srow label{font-size:13.5px;font-weight:600;display:inline-flex;align-items:center;gap:6px}
+.srow output{font:500 16px var(--font-num);font-variant-numeric:tabular-nums;min-width:5.5em;text-align:right}
+.scale{display:flex;justify-content:space-between;padding-inline:52px;font:11px var(--font-num);color:var(--muted)}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:36px;background:transparent;touch-action:pan-y;cursor:grab}
+input[type=range]:active{cursor:grabbing}
+input[type=range]::-webkit-slider-runnable-track{height:6px;border-radius:3px;background:linear-gradient(90deg,var(--line) 0 calc(50% - 1px),var(--muted) calc(50% - 1px) calc(50% + 1px),var(--line) calc(50% + 1px))}
+input[type=range]::-moz-range-track{height:6px;border-radius:3px;background:var(--line)}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:28px;height:28px;margin-top:-11px;border-radius:50%;background:var(--surface);border:3px solid var(--accent);box-shadow:0 1px 3px rgba(0,0,0,.25)}
+input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;background:var(--surface);border:3px solid var(--accent)}
+.slider.usd input[type=range]::-webkit-slider-thumb{border-color:var(--usd)}
+.slider.usd input[type=range]::-moz-range-thumb{border-color:var(--usd)}
+.sens{border-top:1px dashed var(--line);padding-top:10px}
+.key{list-style:none;margin:0 0 6px;padding:0;display:grid;grid-template-columns:1fr;gap:4px;font-size:12.5px;color:var(--muted)}
+.key li{display:flex;align-items:center;gap:8px}
+.key i{flex:none;display:inline-block}
+.lg-line{width:18px;border-top:2.5px solid}
+.lg-dash{width:18px;border-top:2px dashed var(--muted)}
+.lg-zero{width:18px;border-top:2px solid var(--muted)}
+.lg-dia{width:8px;height:8px;margin-inline:5px;transform:rotate(45deg);background:var(--muted)}
+.readout{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:4px 16px;background:var(--bg);border-radius:10px;padding:12px 14px}
+.readout .lab{font-size:12.5px;color:var(--muted);width:100%}
+.readout .v{font:500 22px var(--font-num);font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.readout .v.pos{color:var(--pos)} .readout .v.neg{color:var(--neg)}
+.readout .d{font:500 13px var(--font-num);color:var(--muted)}
+.sens-tbl{border:1px solid var(--line);border-radius:10px;margin-top:8px}
+.sens-tbl table{font-size:12.5px}
+.sens-tbl th{position:static}
+@media (max-width:520px){.sens-tbl table{font-size:11.5px}.sens-tbl th,.sens-tbl td{padding:6px 6px}.sens-tbl th:first-child,.sens-tbl td:first-child{padding-left:10px}}
+.sens-tbl td.pos{color:var(--pos)} .sens-tbl td.neg{color:var(--neg)}
+.sens-tbl tr.cur td,.sens-tbl td.curc{background:var(--accent-soft);font-weight:600}
+.cap{font-size:12.5px;color:var(--muted);margin:6px 0 0;max-width:65ch}
+.shift .hint{font-family:var(--font-ui)}
+.shift .btn{white-space:nowrap}
+.delta{font-family:var(--font-ui)}
+.srange{display:flex;align-items:center;gap:8px}
+.srange input[type=range]{flex:1;min-width:0}
+.nudge,.onudge,.pnudge{flex:none;width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:500 22px/1 var(--font-num);cursor:pointer;touch-action:manipulation;-webkit-user-select:none;user-select:none;display:grid;place-items:center}
+.nudge:active,.onudge:active,.pnudge:active{background:var(--accent-soft);border-color:var(--accent)}
+/* PC(넓은 화면): 입력은 왼쪽 고정, 결과·시뮬레이션·그래프는 오른쪽 */
+.col{display:contents}
+.ticket{order:0}.col-in>*{order:1}.shift{order:2}.col-out>*:not(.ticket):not(.shift){order:3}
+#panel-curve .col-out>*{order:0}#panel-curve .col-in>*{order:1}
+@media (min-width:1080px){
+  .app{max-width:1760px;padding-inline:32px}
+  header h1{font-size:22px}
+  nav.tabs{grid-template-columns:repeat(3,minmax(0,200px));justify-content:start}
+  section.panel{display:grid;grid-template-columns:minmax(360px,420px) minmax(0,1fr);gap:24px;align-items:start}
+  section.panel[hidden]{display:none}
+  .col{display:flex;flex-direction:column;gap:16px;min-width:0}
+  .col-in{position:static;max-height:none;overflow:visible}
+  .col-in .group{padding:12px 16px 14px}
+  .col-in .grid{gap:10px 12px}
+  .col-in label.f input,.col-in label.f select{padding-block:7px}
+  #panel-curve .col-in{position:static;max-height:none;overflow:visible}
+  .ticket{padding:22px 24px}
+  .npv{font-size:40px}
+  .stats{grid-template-columns:repeat(4,minmax(0,1fr))}
+  .key{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .shift fieldset{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);column-gap:28px;row-gap:14px;align-items:start}
+  .shift .readout,.shift .sens,.shift fieldset>.srow,#panel-irs .shift .slider{grid-column:1 / -1}
+  .shift .key{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .sens-tbl table{font-size:13.5px}
+  /* 세로 스크롤 줄이기: 시뮬레이션 그래프·표 좌우 배치, 아래 그래프·표는 2열 */
+  .shift .sens{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);column-gap:20px;align-items:center}
+  .shift .sens .key,.shift .sens .cap{grid-column:1 / -1}
+  .shift .sens .key{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .shift .sens-tbl{margin-top:0}
+  .shift .sens-tbl table{font-size:12.5px}
+  .shift .sens-tbl th,.shift .sens-tbl td{padding:6px 7px}
+  #panel-irs .col-out,#panel-crs .col-out,#panel-opt .col-out{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:start}
+  .col-out>.ticket,.col-out>.shift{grid-column:1 / -1}
+  #panel-irs .col-out{grid-template-rows:auto auto auto 1fr}
+  #panel-irs .col-out>.card{grid-column:1;grid-row:span 2}
+  #panel-irs .col-out>details{grid-column:2}
+  .col-out>.card h2{font-size:13.5px}
+  #panel-opt .col-out>details{grid-column:2}
+  .launch{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .tile{min-height:240px}
+}
+.hdr-r{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.btn.xl{padding:7px 12px;font-size:12.5px;border-color:var(--pos);color:var(--pos)}
+.btn.xl:disabled{opacity:.6;cursor:progress}
+.xl-status{width:100%;font-size:12.5px;color:var(--muted);word-break:break-all}
+.save-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.save-row .btn{flex:1 1 auto}
+.save-msg{font-size:13px;margin-top:10px;display:flex;flex-direction:column;gap:2px}
+.save-msg:empty{display:none}
+.save-msg b{font-family:var(--font-num);font-weight:500}
+.save-msg .warn{color:var(--neg)}
+.save-foot{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:10px;flex-wrap:wrap}
+.save-foot .hint{font-family:var(--font-ui)}
+.btn.ghost{background:transparent;color:var(--neg);border-color:transparent;padding-inline:6px}
+.btn.ghost:disabled{color:var(--muted);opacity:.6}
+.btn.danger{background:var(--neg);border-color:var(--neg);color:var(--surface)}
+select:disabled{opacity:.6}
+.loaded-tag{font-size:12px;color:var(--accent);background:var(--accent-soft);padding:3px 8px;border-radius:999px;align-self:flex-start}
+.view{display:flex;flex-direction:column;gap:16px}
+.hdr-l{display:flex;align-items:center;gap:10px;min-width:0}
+.btn.back{padding:7px 12px;font-size:13px}
+.seg{display:flex;gap:0;border:1px solid var(--line);border-radius:9px;overflow:hidden}
+.seg button{flex:1 1 0;font:600 var(--t-body) var(--font-ui);padding:9px 8px;border:0;background:var(--bg);color:var(--muted);cursor:pointer;word-break:keep-all}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button.on{background:var(--accent);color:var(--surface)}
+.flab{display:block;font-size:var(--t-small);color:var(--muted);margin-bottom:4px}
+.autoval{display:block;font:500 var(--t-input) var(--font-num);color:var(--ink);background:var(--bg);border:1px dashed var(--line);border-radius:8px;padding:9px 10px;min-height:20px}
+.home-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px 16px;flex-wrap:wrap}
+.maker{font:600 var(--t-small) var(--font-ui);color:var(--accent);background:var(--accent-soft);border-radius:999px;padding:4px 12px;white-space:nowrap}
+.maker-calc{align-self:center}
+.maker-f{font-weight:600;color:var(--ink)}
+.home-lead{margin:0;color:var(--muted);font-size:14px;max-width:65ch}
+.launch{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
+.tile{all:unset;box-sizing:border-box;cursor:pointer;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:20px 20px 18px;display:flex;flex-direction:column;gap:6px;min-height:200px;position:relative;transition:border-color .15s,transform .15s}
+.tile:hover{border-color:var(--accent)}
+.tile:active{transform:scale(.99)}
+.tile:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.tile-k{font:500 12px var(--font-num);color:var(--muted);letter-spacing:.02em}
+.tile-t{font-size:22px;font-weight:700;letter-spacing:-.01em;color:var(--ink)}
+.tile-d{font-size:14px;color:var(--muted);max-width:40ch}
+.tile-g{width:120px;height:48px;margin-top:auto}
+.tile-meta{font-size:12px;color:var(--accent)}
+.tile-meta:empty{display:none}
+@media (prefers-reduced-motion:reduce){.tile{transition:none}}
+textarea{font:500 16px/1.5 var(--font-num);color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:9px 10px;width:100%;max-width:100%;box-sizing:border-box;resize:vertical;min-height:110px}
+.opt-r{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.opt-r .hint{font-family:var(--font-ui);font-size:13px;color:var(--ink)}
+.unit-line{font:500 14px var(--font-num);color:var(--muted);font-variant-numeric:tabular-nums}
+.unit-line b{color:var(--ink);font-weight:500}
+.opt-warn{font-size:13px;color:var(--usd);display:flex;flex-direction:column;gap:2px}
+.greeks{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 16px;padding:4px}
+.greek{display:flex;flex-direction:column;gap:2px;min-width:0}
+.greek span{font-size:12.5px;color:var(--muted)}
+.greek b{font:500 18px var(--font-num);font-variant-numeric:tabular-nums}
+.greek em{font-style:normal;font-size:12px;color:var(--muted)}
+.greek em.tot{color:var(--accent);font-weight:500}
+.tree-tbl td{font-size:12px}
+.tree-tbl td small{display:block;color:var(--muted)}
+.prs-note{font-size:11.5px;margin:4px 0 0}
+.prs-chart h3 .unit,.card h2 .unit{font-weight:400;font-size:12px;color:var(--muted)}
+.nw{white-space:nowrap}
+.pval{font-size:12.5px;color:var(--muted);margin-top:-2px}
+.pval b{font:500 13px var(--font-num);color:var(--ink)}
+.pval span{font-size:11.5px}
+.prs-viz{display:grid;grid-template-columns:minmax(0,1fr);gap:20px}
+#prs-viz>.prs-bpn{grid-column:1/-1}
+.bchart{display:grid;grid-template-columns:auto minmax(0,1fr);column-gap:6px;row-gap:6px;margin-top:14px}
+.bchart .bylab{grid-column:1 / -1;font-size:12px;color:var(--muted);margin-bottom:12px}
+.bchart .yax{position:relative;width:54px;font:11.5px var(--font-num);color:var(--muted)}
+.bchart .yax span{position:absolute;right:4px;transform:translateY(-50%);white-space:nowrap}
+.bchart .plot{position:relative;height:250px;border-left:1px solid var(--line)}
+.bchart .gl{position:absolute;left:0;right:0;border-top:1px solid var(--line)}
+.bchart .gl.zero{border-top:1.5px solid var(--muted)}
+.bchart .cols{position:absolute;inset:0;display:flex}
+.bchart .c{position:relative;flex:1;min-width:0}
+.bchart .c.narrow{flex:.8}
+.bchart .bar,.bchart .ghost{position:absolute;left:18%;right:18%;border-radius:4px;box-sizing:border-box;transition:top .28s ease,height .28s ease}
+.bchart .bar.hatch{border:2px solid}
+.bchart .ghost{border:1.5px dashed var(--muted);opacity:.75;left:12%;right:12%}
+.bchart .link{position:absolute;right:82%;width:36%;border-top:1.5px dashed var(--muted);transition:top .28s ease}
+.bchart .val{position:absolute;left:-30%;right:-30%;text-align:center;font:600 11.5px var(--font-num);font-variant-numeric:tabular-nums;letter-spacing:-.02em;transform:translateY(-100%);padding-bottom:3px;transition:top .28s ease;color:var(--ink);white-space:nowrap}
+.bchart .xl{display:flex;font-size:12px;color:var(--muted);text-align:center;line-height:1.3}
+.bchart .xl span{flex:1;min-width:0}
+.bchart .xl span.narrow{flex:.8}
+@media (prefers-reduced-motion:reduce){.bchart .bar,.bchart .ghost,.bchart .link,.bchart .val{transition:none}}
+@media (min-width:1080px){.prs-viz{grid-template-columns:repeat(2,minmax(0,1fr));gap:28px}.bchart .plot{height:330px}.bchart .val{font-size:14px}.bchart .xl{font-size:13px}.bchart .yax{font-size:12.5px;width:60px}}
+.psim .slider input[type=range]::-webkit-slider-thumb{border-color:var(--sc,var(--accent))}
+.psim .slider input[type=range]::-moz-range-thumb{border-color:var(--sc,var(--accent))}
+.prs-key{grid-template-columns:1fr!important}
+.prs-key b{font:500 12.5px var(--font-num);color:var(--ink)}
+.prs-chart h3{font-size:13px;font-weight:600;margin:0 0 2px}
+.prs-chart .cap{margin:2px 0 0}
+.prs-chart .cap b{font-family:var(--font-num);font-weight:500;color:var(--ink)}
+.ytm-tbl{border:1px solid var(--line);border-radius:10px}
+.ytm-tbl th{position:static}
+.ytm-tbl td{padding:4px 8px}
+.ytm-tbl input{font:500 16px var(--font-num);width:100%;min-width:0;box-sizing:border-box;text-align:right;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:6px 8px}
+@media (min-width:1080px){
+  #panel-prs .col-out{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:start}
+  #panel-prs .col-out>details{grid-column:1 / -1}
+  .prs-key{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+  .shift.psim .sens{display:block}
+  .shift.psim fieldset>.slider{grid-column:auto}
+}
+/* 넓은 PC 화면 */
+.prs-chart h3 .unit,.card h2 .unit{white-space:nowrap}
+.srow label,.stat span,.tile-meta,.xl span{word-break:keep-all}
+@media (min-width:1080px){
+  .cap{max-width:none}
+  .shift.psim fieldset{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .shift.psim.fsim fieldset{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .shift.psim fieldset>.readout,.shift.psim fieldset>.sens,.shift.psim fieldset>.srow,.shift.psim fieldset>.prs-note{grid-column:1 / -1}
+}
+@media (min-width:1500px){
+  section.panel{grid-template-columns:minmax(400px,460px) minmax(0,1fr);gap:28px}
+}
+.cb-head{display:flex;align-items:flex-end;justify-content:space-between;gap:10px 18px;flex-wrap:wrap}
+.zbox{display:flex;flex-direction:column;align-items:flex-end;background:var(--accent-soft);border-radius:10px;padding:8px 12px;min-width:0}
+.zbox span{font-size:12px;color:var(--muted)}
+.zbox b{font:500 20px var(--font-num);color:var(--accent);white-space:nowrap}
+.zbox em{font-style:normal;font-size:11.5px;color:var(--muted);white-space:nowrap}
+.zbox em.zsub{border-top:1px dashed var(--line);margin-top:4px;padding-top:3px}
+.pnudge,.cnudge{flex:none;width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:500 22px/1 var(--font-num);cursor:pointer;touch-action:manipulation;-webkit-user-select:none;user-select:none;display:grid;place-items:center}
+.cnudge:active{background:var(--accent-soft);border-color:var(--accent)}
+.csim .slider input[type=range]::-webkit-slider-thumb{border-color:var(--sc,var(--accent))}
+.csim .slider input[type=range]::-moz-range-thumb{border-color:var(--sc,var(--accent))}
+@media (min-width:1080px){
+  #panel-cb .col-out{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:start}
+  #panel-cb .col-out>details{grid-column:1 / -1}
+  .shift.csim fieldset{grid-template-columns:repeat(4,minmax(0,1fr))}
+  .shift.csim fieldset>.readout,.shift.csim fieldset>.sens,.shift.csim fieldset>.srow,.shift.csim fieldset>.prs-note{grid-column:1 / -1}
+  .shift.csim .sens{display:block}
+}
+@media (min-width:1080px) and (max-width:1499px){ .shift.csim fieldset{grid-template-columns:repeat(2,minmax(0,1fr))} .shift.psim:not(.fsim) fieldset{grid-template-columns:repeat(2,minmax(0,1fr))} }
+.fnudge{flex:none;width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:500 22px/1 var(--font-num);cursor:pointer;touch-action:manipulation;-webkit-user-select:none;user-select:none;display:grid;place-items:center}
+/* 저장 결과 조회 */
+.sv-open{margin-top:10px}.sv-open .btn{width:100%}
+.user-chip{font:500 var(--t-small) var(--font-ui);color:var(--muted);display:inline-flex;align-items:center;gap:4px;white-space:nowrap}
+.user-chip b{color:var(--ink)} .user-chip .btn.ghost{color:var(--accent);padding:2px 4px;font-size:var(--t-small)}
+.gate-card{max-width:440px;margin-top:12vh}
+.gate-card input{font:500 var(--t-input) var(--font-ui);width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)}
+.drop-ov{position:fixed;inset:0;z-index:70;background:rgba(30,90,150,.18);border:4px dashed var(--accent);display:flex;align-items:center;justify-content:center;pointer-events:none}
+.drop-ov span{background:var(--surface);color:var(--ink);font:600 var(--t-title) var(--font-ui);padding:16px 22px;border-radius:12px;box-shadow:0 8px 30px rgba(0,0,0,.2)}
+.imp-tbl td.st-new{color:var(--pos);font-weight:600} .imp-tbl td.st-up{color:var(--accent);font-weight:600} .imp-tbl td.st-skip{color:var(--neg);font-weight:600}
+.sv-io{display:flex;gap:8px;margin-top:8px}.sv-io .btn{flex:1 1 0}
+.modal{position:fixed;inset:0;z-index:60;background:rgba(15,23,42,.45);display:flex;align-items:flex-start;justify-content:center;padding:24px 12px;overflow:auto}
+.modal-card{background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:14px;width:100%;max-width:1040px;padding:18px 16px;display:flex;flex-direction:column;gap:10px;box-shadow:0 12px 40px rgba(0,0,0,.25)}
+.modal-head{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.modal-head h2{margin:0;font-size:var(--t-title);font-weight:700}
+.sv-bar{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.sv-tbl{border:1px solid var(--line);border-radius:10px}
+.sv-tbl th{position:static}
+.sv-tbl td.pos{color:var(--pos)} .sv-tbl td.neg{color:var(--neg)}
+.sv-tbl tr.pick{cursor:pointer} .sv-tbl tr.pick:hover td,.sv-tbl tr.pick:focus td{background:var(--accent-soft)}
+.sv-tbl tr.cur td{background:var(--accent-soft)}
+.sv-tbl td.sv-act{white-space:nowrap;text-align:right} .sv-tbl td.sv-act .btn{padding:5px 10px;font-size:var(--t-small)}
+.sv-tbl td{white-space:nowrap}
+.notice-top{background:var(--accent-soft);color:var(--accent);border:1px solid var(--accent);border-radius:10px;padding:8px 14px;font-weight:700;font-size:14px;text-align:center;margin-bottom:10px;word-break:keep-all}
+.vol-off{opacity:.5}
+.vol-off:focus-within{opacity:1}
+.vol-tag{font-size:11px;font-weight:700;color:var(--accent);background:var(--accent-soft);padding:1px 6px;border-radius:999px;margin-left:4px}
+.vol-off .vol-tag{color:var(--muted);background:transparent;border:1px solid var(--line)}
+/* 재무계산기 */
+body.calc-only .notice-top,body.calc-only header,body.calc-only footer,body.calc-only .fin-top,body.calc-only #fin-kp-side,body.calc-only #fin-ws-wrap{display:none!important}
+body.calc-only .app{padding:8px 8px 4px;max-width:none;margin:0}
+body.calc-float{background:#141517}
+body.calc-only .fin-kp-grid{grid-template-columns:minmax(0,1fr)!important}
+body.calc-only .calc{max-width:none}
+.fin-mini{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px;font-size:12px}
+.fin-mini[hidden]{display:none}
+body.calc-float .fin-mini{color:#d8d8d8}
+.fin-ontop{display:flex;align-items:center;gap:6px;font-weight:600;cursor:pointer}
+.fin-mini-note{margin-left:auto;opacity:.8}
+#panel-fin.panel{display:flex!important;flex-direction:column;gap:14px;grid-template-columns:none}
+#panel-fin>*{width:100%;max-width:none}
+.fin-top{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.fin-mode{flex:0 0 auto}
+.fin-tabs{display:flex;flex-wrap:wrap;gap:6px}
+.fin-tabs button{font:600 13px var(--font-ui);padding:7px 11px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer}
+.fin-tabs button[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+.fin-ws-grid,.fin-kp-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:14px;align-items:start}
+@media (min-width:1080px){ .fin-ws-grid{grid-template-columns:minmax(0,1.1fr) minmax(0,1fr)} .fin-kp-grid{grid-template-columns:440px minmax(0,1fr)} }
+.fin-sec{font:700 13px var(--font-ui);color:var(--accent);border-bottom:1px solid var(--line);padding-bottom:4px;margin-top:6px}
+.fin-in{display:flex;gap:6px;align-items:stretch}.fin-in input{flex:1 1 auto}
+.fin-cpt{flex:0 0 auto;padding:0 10px;font-weight:700}
+label.f input.fin-done{border-color:var(--pos);box-shadow:0 0 0 2px color-mix(in srgb,var(--pos) 25%,transparent)}
+.fin-cf input{width:100%;box-sizing:border-box;font:500 14px var(--font-num);padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink);text-align:right}
+.fin-cf td{padding:3px 6px}
+.fin-h{font-size:14px;margin:4px 0 8px}
+.fin-res{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px 14px;margin-bottom:10px}
+.fin-scroll{max-height:460px;overflow:auto}
+.fin-help{margin:0;padding-left:18px;font-size:13px;line-height:1.7;color:var(--muted)}
+.fin-side .stat span{font-size:12px}
+.calc{background:#1d1f22;border-radius:18px;padding:16px 16px 12px;box-shadow:inset 0 0 0 1px #3a3d42;max-width:440px;width:100%;box-sizing:border-box;justify-self:center}
+.calc-disp{background:#c7cfc3;color:#1b2118;border-radius:8px;padding:6px 10px 8px;margin-bottom:12px;box-shadow:inset 0 2px 4px rgba(0,0,0,.35);font-family:var(--font-num)}
+.calc-ind{font-size:11px;min-height:15px;letter-spacing:.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.calc-main{display:flex;justify-content:space-between;align-items:baseline;gap:8px;min-height:36px}
+.calc-lab{font-size:16px;font-weight:700;white-space:nowrap}
+.calc-val{font-size:28px;font-weight:600;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-variant-numeric:tabular-nums}
+.calc-keys{display:grid;grid-template-columns:repeat(5,1fr);gap:4px 8px}
+.ck-cell{display:flex;flex-direction:column;align-items:stretch}
+.ck-cell.ck-tall{grid-row:span 2}
+.ck-sec{font:600 10px var(--font-ui);color:#e6e6e6;text-align:center;min-height:13px;line-height:13px;white-space:nowrap;overflow:hidden}
+.ck{font:700 14px var(--font-ui);color:#fff;background:#3b3e44;border:0;border-radius:8px;padding:10px 0;cursor:pointer;box-shadow:0 2px 0 #0b0c0d;min-height:38px;letter-spacing:.02em}
+.ck:active,.ck.press{transform:translateY(1px);box-shadow:0 1px 0 #0b0c0d;filter:brightness(1.25)}
+.ck-num{background:#2a2c30;font-size:17px}
+.ck-tvm{box-shadow:inset 0 0 0 1.5px #d9d9d9,0 2px 0 #0b0c0d}
+.ck-2nd{background:#9aa0a6;color:#111}.ck-2nd.on{background:#f2c14e;color:#111}
+.ck-tall .ck{flex:1 1 auto;font-size:20px}
+.calc-brand{text-align:center;color:#d8d8d8;font:600 11px var(--font-ui);letter-spacing:.12em;margin-top:12px}
+@media (max-width:480px){ .ck{font-size:12px;padding:9px 0;min-height:34px} .ck-num{font-size:15px} .ck-sec{font-size:8.5px} .calc{padding:12px 10px 10px} .calc-keys{gap:3px 5px} }
+.rep-box{border-radius:10px;border-style:dashed}
+.rvm-box{border:1px dashed var(--line);border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:8px}
+.rvm-head{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+#cb-rvm-btn[aria-pressed="true"]{background:var(--accent);color:#fff;border-color:var(--accent)}
+.rvm-tbl table{border-collapse:collapse;width:100%;table-layout:fixed}
+.rvm-tbl th:first-child{width:52px}
+.rvm-tbl th{font-size:12px;color:var(--muted);font-weight:600;padding:4px;text-align:center;white-space:nowrap}
+.rvm-tbl td{padding:2px}
+.rvm-tbl input{width:100%;box-sizing:border-box;font:500 12px var(--font-num);text-align:right;padding:5px 3px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink);min-width:0}
+.rvm-box.off .rvm-tbl input{opacity:.45;background:var(--surface)}
+.rvm-box.off .rvm-tools{display:none}
+.rvm-tools{display:flex;gap:8px;flex-wrap:wrap}
+.rep-box summary{padding:10px 12px;font-size:13.5px}
+.rep-box .rep-sum{font-weight:500;color:var(--muted)}
+.rep-in{padding:0 12px 12px}
+.rep-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px}
+.rep-tbl{margin-top:10px}
+.rep-tbl td,.rep-tbl th{text-align:right;vertical-align:top} .rep-tbl td:first-child,.rep-tbl th:first-child{text-align:left}
+.rep-foot{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px}
+td.rep-ok,.rep-line.rep-ok b{color:var(--pos)} td.rep-far,.rep-line.rep-far b{color:var(--neg)}
+.rep-line{font-size:12.5px;color:var(--ink);background:var(--bg);border:1px solid var(--line);padding:4px 10px;border-radius:999px;align-self:flex-start}
+/* 폭포 그래프 (금리 스왑 · 옵션) */
+.wf-box{border-top:1px dashed var(--line);padding-top:10px}
+@media (min-width:1080px){ .shift fieldset>.wf-box{grid-column:1 / -1} .wf-box .bchart,.wf-box .cap{max-width:820px} }
+#fx-tbl tr.cur td{background:var(--accent-soft);font-weight:600}
+.fnudge:active{background:var(--accent-soft);border-color:var(--accent)}
+@media (min-width:1080px){
+  #panel-fx .col-out{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:start}
+  #panel-fx .col-out>details{grid-column:1 / -1}
+}
+footer{font-size:12px;color:var(--muted);display:flex;flex-direction:column;gap:6px}
+
+/* ───────── 글자 크기 체계 (모든 계산기 공통) ─────────
+   역할이 같으면 크기가 같도록, 아래 토큰만 쓴다.
+   micro 11.5 · small 12.5 · body 13.5 · title 14 · value 15 · input 16 · big 22 · hero 26~34(PC 40) */
+:root{--t-micro:11.5px;--t-small:12.5px;--t-body:13.5px;--t-title:14px;--t-value:15px;--t-input:16px;--t-big:22px}
+/* 보조 주석 · 눈금 */
+.scale,.prs-note,.pval span,.zbox em,.delta .tag{font-size:var(--t-micro)}
+.scale{font-family:var(--font-num)}
+/* 라벨 · 캡션 · 범례 · 힌트 · 단위 · 표 */
+label.f,.hint,.stat span,.legend,.key,.cap,.readout .lab,.fair span,.greek span,.greek em,.tile-k,.tile-meta,.loaded-tag,
+.ticket .eyebrow,.src,.xl-status,.zbox span,.prs-chart h3 .unit,.card h2 .unit,.bchart .bylab,.bchart .xl,footer,summary::after,
+table,.tree-tbl td,.sens-tbl table,.chip,.pval,.prs-key b,.btn.xl{font-size:var(--t-small)}
+/* 본문 메시지 · 버튼 · 체크 · 슬라이더 이름 */
+.srow label,.save-msg,.mkt-status,.opt-warn,.note,.side,.readout .d,label.check,.btn,.btn.back,.opt-r .hint,.err,.pval b,.unit-line,.delta{font-size:var(--t-body)}
+/* 카드 · 섹션 · 그래프 제목 */
+legend,.card h2,.col-out>.card h2,.prs-chart h3,summary,nav.tabs button,.home-lead,.tile-d{font-size:var(--t-title)}
+legend{letter-spacing:.02em}
+/* 결과 수치 */
+.stat b,.fair b,.greek b{font-size:var(--t-value)}
+/* 입력값 · 슬라이더 현재값 (휴대폰 확대 방지 16px) */
+label.f input,label.f select,.curve-table input,.ytm-tbl input,textarea,.srow output{font-size:var(--t-input)}
+/* 큰 수치 */
+.readout .v,.zbox b,.tile-t{font-size:var(--t-big)}
+/* 막대그래프 숫자 · 축: SVG 그래프와 같은 크기 (휴대폰 축 11.5 / PC 12.5) */
+.bchart .yax{font-size:var(--t-micro)}
+.bchart .val{font-size:var(--t-small)}
+@media (max-width:520px){ .sens-tbl table{font-size:var(--t-micro)} }
+@media (min-width:1080px){
+  .bchart .yax,.bchart .xl{font-size:var(--t-small)}
+  .bchart .xl{font-size:var(--t-body)}
+  .bchart .val{font-size:var(--t-body)}
+  .sens-tbl table,.shift .sens-tbl table{font-size:var(--t-small)}
+  .npv{font-size:40px}
+}
+
+
+/* ═════════ 디자인 스킨 (Fluent) — 부드러운 회청색 지면 · 둥근 흰 카드와 겹 그림자 · 남색→인디고 그라데이션 결과 카드 · 미끄러지는 탭.
+   위 규칙의 모양과 움직임만 바꾼다. 배치·글자 크기 체계는 그대로 ═════════ */
+:root{--ease-out:cubic-bezier(.23,1,.32,1);--ease-io:cubic-bezier(.77,0,.175,1)}
+body{font-feature-settings:"tnum" 1,"ss01" 1;background:var(--bg);background-image:radial-gradient(1200px 520px at 12% -10%,var(--glow-1),transparent 60%),radial-gradient(900px 480px at 100% 0%,var(--glow-2),transparent 55%);background-attachment:fixed;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+body.calc-only{background-image:none}
+.app{gap:20px;padding-block:10px 72px}
+::selection{background:color-mix(in srgb,var(--accent) 22%,transparent)}
+/* 화면 전환: 들어올 때 한 번, 짧게 */
+.view:not([hidden]){animation:fl-in 260ms var(--ease-out) both}
+@keyframes fl-in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+section.panel:not([hidden]){animation:fl-fade 200ms var(--ease-out) both}
+@keyframes fl-fade{from{opacity:0}to{opacity:1}}
+/* 맨 위 안내 문구 */
+.notice-top{display:flex;align-items:center;justify-content:center;gap:8px;background:color-mix(in srgb,var(--accent) 9%,var(--surface));color:var(--accent);border:1px solid color-mix(in srgb,var(--accent) 22%,transparent);border-radius:999px;padding:7px 16px;margin:0 auto;width:fit-content;max-width:100%;font-weight:600;font-size:var(--t-small);text-align:center}
+.notice-top::before{content:"";flex:none;width:6px;height:6px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 4px color-mix(in srgb,var(--accent) 18%,transparent)}
+/* 제목 영역 */
+header{background:transparent;border:0;border-radius:0;padding:14px 0 2px;box-shadow:none;row-gap:4px}
+.kicker{flex:1 1 100%;order:-1;font:600 12px/1 var(--font-num);letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+header h1{font-family:var(--font-ui);font-weight:700;font-size:clamp(24px,4.6vw,34px);letter-spacing:-.035em;color:var(--ink);line-height:1.15}
+header .btn.back{border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--ink);padding:6px 13px;font-weight:600;box-shadow:var(--sh-1)}
+header .maker{background:var(--chip);border:0;border-radius:999px;color:var(--muted);padding:4px 11px;font-weight:600}
+header .chip{border:1px solid var(--line);border-radius:999px;background:var(--surface);box-shadow:var(--sh-1)}
+header .btn.xl{border-radius:999px}
+/* 홈 */
+.home-lead{color:var(--muted);font-size:clamp(15px,1.5vw,17px);line-height:1.6}
+.maker{background:var(--chip);border:0;border-radius:999px;color:var(--muted);font-weight:600;padding:4px 11px}
+.launch{gap:16px}
+@media (min-width:760px){.launch{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (min-width:1080px){.launch{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.tile{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:22px 22px 20px;box-shadow:var(--sh-1);gap:8px;min-height:210px;transition:transform 220ms var(--ease-out),box-shadow 220ms var(--ease-out),border-color 220ms ease}
+.tile.wide{background:linear-gradient(120deg,var(--hero-a),var(--hero-b));border-color:transparent;color:#fff;box-shadow:var(--sh-2)}
+.tile.wide .tile-k{color:rgba(255,255,255,.72)} .tile.wide .tile-t{color:#fff} .tile.wide .tile-d{color:rgba(255,255,255,.78)} .tile.wide .tile-meta{color:#BFD3FF} .tile.wide::after{color:#fff;background:rgba(255,255,255,.14)}
+.tile.wide .tile-g path[stroke="var(--line)"]{stroke:rgba(255,255,255,.35)} .tile.wide .tile-g path[stroke="var(--accent)"]{stroke:#fff} .tile.wide .tile-g path[stroke="var(--usd)"]{stroke:#9CC2FF}
+.tile::after{content:"→";position:absolute;top:18px;right:18px;display:grid;place-items:center;width:30px;height:30px;border-radius:50%;background:var(--chip);font:600 15px/1 var(--font-num);color:var(--ink);transition:transform 220ms var(--ease-out),background-color 200ms ease}
+.tile:active{transform:scale(.985)}
+@media (hover:hover) and (pointer:fine){
+  .tile:hover{transform:translateY(-3px);box-shadow:var(--sh-2);border-color:color-mix(in srgb,var(--accent) 30%,var(--line))}
+  .tile:hover::after{transform:translateX(3px);background:var(--accent);color:#fff}
+  .tile.wide:hover{border-color:transparent}
+  .tile.wide:hover::after{background:#fff;color:var(--hero-a)}
+}
+.tile-k{font:600 11px/1.5 var(--font-num);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding-right:40px}
+.tile-t{font-family:var(--font-ui);font-weight:700;font-size:clamp(21px,3vw,24px);letter-spacing:-.03em;line-height:1.25;color:var(--ink)}
+.tile-d{line-height:1.6;color:var(--muted)}
+.tile-g{margin-top:auto;padding-top:10px;width:132px;height:58px}
+.tile-meta{color:var(--accent);font-weight:600}
+@media (prefers-reduced-motion:reduce){.tile,.tile::after{transition:none}.tile:hover,.tile:active{transform:none}}
+/* 계산기 탭: 미끄러지는 알약 */
+nav.tabs{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;gap:0;padding:4px;margin-block:2px;border:1px solid var(--line);border-radius:999px;background:color-mix(in srgb,var(--surface) 78%,transparent);-webkit-backdrop-filter:saturate(1.6) blur(14px);backdrop-filter:saturate(1.6) blur(14px);box-shadow:var(--sh-1);isolation:isolate}
+nav.tabs::before{content:"";position:absolute;z-index:-1;top:4px;bottom:4px;left:4px;width:calc((100% - 8px)/3);border-radius:999px;background:var(--ink);box-shadow:0 2px 8px -2px color-mix(in srgb,var(--ink) 45%,transparent);transform:translateX(calc(var(--ti,0)*100%));transition:transform 260ms var(--ease-out)}
+nav.tabs button{position:relative;border:0;border-radius:999px;background:transparent;color:var(--muted);padding:10px 4px;box-shadow:none;font-weight:600;transition:color 200ms ease}
+nav.tabs button[aria-selected="true"]{background:transparent;color:var(--bg-ink);box-shadow:none}
+@media (hover:hover) and (pointer:fine){ nav.tabs button:not([aria-selected="true"]):hover{color:var(--ink)} }
+@media (min-width:1080px){ nav.tabs{width:max-content;grid-template-columns:repeat(3,200px);justify-content:start} nav.tabs::before{width:200px} }
+@media (prefers-reduced-motion:reduce){ nav.tabs::before{transition:none} }
+/* 패널 카드 */
+.group,.card,details{background:var(--surface);border:1px solid var(--line);border-radius:18px;box-shadow:var(--sh-1)}
+.group{padding:18px 20px 18px}
+.card{padding:18px 20px 12px}
+.card h2,legend,summary{font-family:var(--font-ui);font-weight:700;color:var(--ink);letter-spacing:-.02em}
+.card h2{margin:0 0 10px;font-size:16px;line-height:1.35}
+legend{font-size:16px;line-height:1.35;margin-bottom:12px}
+summary{padding:15px 20px;font-size:15px;border-radius:18px;transition:background-color 160ms ease}
+@media (hover:hover) and (pointer:fine){ summary:hover{background:var(--chip)} }
+summary::after{color:var(--accent);font:600 var(--t-small) var(--font-ui)}
+details[open]>summary{border-bottom-left-radius:0;border-bottom-right-radius:0}
+details[open]>:not(summary){animation:fl-fade 200ms var(--ease-out)}
+.rep-box,.rvm-box{border:1px dashed var(--line);border-radius:14px;box-shadow:none}
+.rep-box summary{padding:11px 14px;font-size:14px}
+/* 입력 */
+label.f{color:var(--muted);font-weight:500}
+label.f input,label.f select,textarea,.curve-table input,.ytm-tbl input,.fin-cf input,.rvm-tbl input,.gate-card input,.autoval,select.rc-sel{background:var(--field);border:1px solid var(--line);border-radius:12px;transition:border-color 160ms ease,box-shadow 160ms ease,background-color 160ms ease}
+@media (hover:hover) and (pointer:fine){ label.f input:hover,label.f select:hover,textarea:hover,select.rc-sel:hover{border-color:color-mix(in srgb,var(--muted) 45%,var(--line))} }
+label.f input:focus,label.f select:focus,textarea:focus,.curve-table input:focus,.ytm-tbl input:focus,.fin-cf input:focus,.rvm-tbl input:focus,select.rc-sel:focus{outline:none;border-color:var(--accent);background:var(--surface);box-shadow:0 0 0 4px color-mix(in srgb,var(--accent) 16%,transparent)}
+label.f input:disabled,label.f select:disabled{opacity:.55}
+.ytm-tbl input,.rvm-tbl input,.curve-table input,.fin-cf input{border-radius:8px}
+/* 버튼: 누르면 살짝 작아짐 */
+.btn{border-radius:12px;font-weight:600;box-shadow:var(--sh-1);transition:transform 160ms var(--ease-out),background-color 160ms ease,border-color 160ms ease,color 160ms ease,box-shadow 160ms ease}
+.btn:active:not(:disabled){transform:scale(.97)}
+@media (hover:hover) and (pointer:fine){ .btn:hover{border-color:color-mix(in srgb,var(--muted) 45%,var(--line));background:var(--surface)} }
+.btn.primary{background:var(--ink);border-color:var(--ink);color:var(--bg-ink);box-shadow:0 1px 2px rgba(10,20,40,.18),0 6px 16px -8px color-mix(in srgb,var(--ink) 60%,transparent)}
+@media (hover:hover) and (pointer:fine){ .btn.primary:hover{background:var(--accent);border-color:var(--accent);color:#fff} }
+.btn.primary:active{background:var(--ink)}
+.btn.ghost{box-shadow:none}
+.btn.ghost:hover{background:transparent;text-decoration:underline;text-underline-offset:3px}
+.btn.danger:hover{filter:brightness(.94);color:#fff}
+.btn.xl{border-radius:999px}
+.btn.xl:hover{color:var(--pos);border-color:var(--pos)}
+.nudge,.onudge,.pnudge,.cnudge,.fnudge{background:var(--surface);border-color:var(--line);box-shadow:var(--sh-1);transition:transform 140ms var(--ease-out),border-color 160ms ease,color 160ms ease}
+.nudge:active,.onudge:active,.pnudge:active,.cnudge:active,.fnudge:active{transform:scale(.92)}
+@media (hover:hover) and (pointer:fine){ .nudge:hover,.onudge:hover,.pnudge:hover,.cnudge:hover,.fnudge:hover{border-color:var(--accent);color:var(--accent)} }
+.seg{border:1px solid var(--line);border-radius:999px;background:var(--chip);padding:3px;gap:3px}
+.seg button{border-radius:999px;background:transparent;color:var(--muted);transition:background-color 200ms ease,color 200ms ease,box-shadow 200ms ease}
+.seg button+button{border-left:0}
+.seg button.on{background:var(--surface);color:var(--ink);box-shadow:var(--sh-1)}
+/* 결과 카드: 남색→인디고 그라데이션, 흰 글자 (화면마다 하나) */
+.ticket{
+  --surface:rgba(255,255,255,.10); --bg:rgba(255,255,255,.06); --field:rgba(255,255,255,.08); --chip:rgba(255,255,255,.12);
+  --ink:#FFFFFF; --muted:rgba(226,233,255,.72); --line:rgba(255,255,255,.16);
+  --accent:#BFD3FF; --accent-soft:rgba(191,211,255,.16); --pos:#7BE3B0; --neg:#FFA59B; --usd:#8FD6FF;
+  color:var(--ink); color-scheme:dark;
+  position:relative;overflow:hidden;background:linear-gradient(135deg,var(--hero-a) 0%,var(--hero-b) 100%);border:0;border-radius:22px;box-shadow:var(--sh-2);padding:24px 24px}
+.ticket::before{content:"";position:absolute;inset:-40% -10% auto auto;width:70%;height:140%;background:radial-gradient(closest-side,rgba(140,180,255,.28),transparent);pointer-events:none}
+.ticket>*{position:relative}
+.ticket .eyebrow{color:var(--muted);letter-spacing:.04em;font-weight:600;font-size:12px}
+.npv{font-family:var(--font-num);font-weight:600;letter-spacing:-.04em;color:var(--ink)}
+.npv.pos{color:var(--pos)} .npv.neg{color:var(--neg)}
+.npv small{font-family:var(--font-ui);color:var(--muted);font-weight:500;letter-spacing:0}
+.ticket .stats{border-top:1px solid var(--line)}
+.ticket .stat{padding-left:0;border-left:0}
+.ticket .stat b{font-family:var(--font-num);font-weight:600;font-size:16px;color:var(--ink);letter-spacing:-.01em}
+.stat b,.greek b,.fair b{font-weight:600}
+.ticket .zbox{background:rgba(255,255,255,.08);border:1px solid var(--line);border-radius:14px}
+.ticket .zbox b{color:var(--ink)}
+.ticket .btn{background:rgba(255,255,255,.1);color:#fff;border-color:var(--line);box-shadow:none}
+.loaded-tag{border-radius:999px}
+/* 시뮬레이션 수치판 */
+.readout{background:var(--chip);border:0;border-radius:14px}
+.readout .v{font-family:var(--font-num);font-weight:600;letter-spacing:-.02em}
+input[type=range]::-webkit-slider-runnable-track{height:6px;border-radius:999px}
+input[type=range]::-webkit-slider-thumb{width:22px;height:22px;margin-top:-8px;border-width:2.5px;border-color:var(--ink);background:var(--surface);box-shadow:0 1px 3px rgba(10,20,40,.25),0 0 0 0 color-mix(in srgb,var(--accent) 20%,transparent);transition:box-shadow 160ms var(--ease-out),transform 160ms var(--ease-out)}
+input[type=range]:active::-webkit-slider-thumb{transform:scale(1.08);box-shadow:0 1px 3px rgba(10,20,40,.25),0 0 0 6px color-mix(in srgb,var(--accent) 18%,transparent)}
+input[type=range]::-moz-range-thumb{border-color:var(--ink)}
+/* 표 */
+th{background:var(--chip);color:var(--muted);font-weight:600;border-bottom:1px solid var(--line)}
+tbody tr{transition:background-color 120ms ease}
+@media (hover:hover) and (pointer:fine){ tbody tr:hover td{background:color-mix(in srgb,var(--accent) 6%,transparent)} }
+.sens-tbl,.ytm-tbl,.sv-tbl,.rvm-tbl{border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.cap,.note{color:var(--muted)}
+/* 알약 탭 (재무계산기 · 공통 금리커브) */
+.fin-tabs{gap:6px}
+.fin-tabs button{background:var(--surface);border:1px solid var(--line);border-radius:999px;color:var(--muted);font-weight:600;box-shadow:var(--sh-1);transition:background-color 180ms ease,color 180ms ease,border-color 180ms ease,transform 140ms var(--ease-out)}
+.fin-tabs button:active{transform:scale(.96)}
+@media (hover:hover) and (pointer:fine){ .fin-tabs button:hover{color:var(--ink);border-color:color-mix(in srgb,var(--muted) 45%,var(--line))} }
+.fin-tabs button[aria-selected="true"]{background:var(--ink);border-color:var(--ink);color:var(--bg-ink)}
+.fin-sec{font-family:var(--font-ui);color:var(--ink);border-bottom:1px solid var(--line);padding:0 0 6px;font-size:14.5px;letter-spacing:-.01em}
+/* 키패드: 실물 계산기 질감 유지 */
+.calc{background:linear-gradient(180deg,#2A2E34 0%,#1B1E22 60%,#17191C 100%);border-radius:26px;padding:20px 18px 14px;box-shadow:inset 0 1px 0 rgba(255,255,255,.08),inset 0 0 0 1px #3A3E44,0 24px 48px -18px rgba(10,20,40,.45)}
+.calc-disp{background:linear-gradient(180deg,#C9D3C3,#B8C3B1);border-radius:12px;padding:8px 12px 10px;box-shadow:inset 0 2px 6px rgba(0,0,0,.4),0 0 0 3px #101214;font-family:var(--font-mono)}
+.calc-val{font-weight:500;letter-spacing:.01em}
+.ck{background:linear-gradient(180deg,#464A51,#36393F);box-shadow:inset 0 1px 0 rgba(255,255,255,.10),0 2px 0 #0B0C0D;border-radius:10px;font-family:var(--font-ui);transition:transform 100ms var(--ease-out),filter 120ms ease}
+.ck-num{background:linear-gradient(180deg,#33363B,#26282C)}
+.ck-tvm{box-shadow:inset 0 0 0 1.5px #CDD2D8,inset 0 1px 0 rgba(255,255,255,.10),0 2px 0 #0B0C0D}
+.ck-2nd{background:linear-gradient(180deg,#AEB4BB,#959BA2)}.ck-2nd.on{background:linear-gradient(180deg,#F5CD6A,#E3B23F)}
+@media (hover:hover) and (pointer:fine){ .ck:hover{filter:brightness(1.12)} }
+.calc-brand{color:#9AA3AD;letter-spacing:.18em}
+body.calc-float{background:#121417}
+/* 모달: 가운데에서 살짝 커지며 등장 */
+.modal{background:rgba(10,18,35,.38);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+.modal:not([hidden]){animation:fl-fade 200ms var(--ease-out)}
+.modal:not([hidden]) .modal-card{animation:fl-pop 240ms var(--ease-out)}
+@keyframes fl-pop{from{opacity:0;transform:scale(.96) translateY(6px)}to{opacity:1;transform:none}}
+.modal-card{border-radius:22px;border:1px solid var(--line);box-shadow:var(--sh-3)}
+/* 맨 아래 */
+footer{border-top:1px solid var(--line);padding-top:16px}
+footer b,footer strong{color:var(--ink)}
+@media (min-width:1080px){
+  header{padding:22px 0 4px}
+  .ticket{padding:28px 32px}
+  .ticket .npv{font-size:50px}
+  .col-in .group{padding:16px 20px 18px}
+}
+@media (max-width:520px){ header{padding:10px 0 0} .ticket{border-radius:20px;padding:20px 18px} }
+@media (prefers-reduced-motion:reduce){
+  .view:not([hidden]),section.panel:not([hidden]),details[open]>:not(summary),.modal:not([hidden]),.modal:not([hidden]) .modal-card{animation:fl-fade 160ms ease}
+  .btn:active,.fin-tabs button:active,.nudge:active,.onudge:active,.pnudge:active,.cnudge:active,.fnudge:active{transform:none}
+}
+.btn.back{white-space:nowrap}
+.seg button{white-space:normal;word-break:keep-all;line-height:1.3;min-width:0}
+.fin-mode button{padding-inline:14px}
+.modal-card.gate-card{max-width:440px;margin-inline:auto}
+.tile.wide{grid-column:1/-1;min-height:auto;display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:24px;align-items:end}
+.tile.wide>.tile-k,.tile.wide>.tile-t,.tile.wide>.tile-d,.tile.wide>.tile-meta{grid-column:1}
+.tile.wide>.tile-d{max-width:80ch}
+.tile.wide>.tile-g{grid-column:2;grid-row:1 / span 4;align-self:center;margin:0;padding:0}
+@media (max-width:520px){ .tile.wide{grid-template-columns:minmax(0,1fr)} .tile.wide>.tile-g{grid-column:1;grid-row:auto} }
+.rc-names{margin-bottom:6px}
+.rc-pick{display:flex;gap:8px;align-items:end;flex-wrap:wrap}
+select.rc-sel{font:500 var(--t-body) var(--font-ui);color:var(--ink);background:var(--field);border:1px solid var(--line);border-radius:2px;padding:8px 10px;max-width:100%;min-width:0}
+.opt-r .rc-sel{flex:1 1 220px}
+.rc-pick .f{flex:1 1 160px}
+#rc-in input{max-width:120px}
+
+/* ───────── 그래프 다듬기 ───────── */
+svg.chart text{font-variant-numeric:tabular-nums}
+svg.chart line.gl{stroke:var(--line);stroke-width:1px;shape-rendering:crispEdges;stroke-opacity:.75}
+svg.chart line.zl{stroke:var(--ink);stroke-opacity:.45;stroke-width:1px;shape-rendering:crispEdges}
+svg.chart[data-lc]{cursor:crosshair;touch-action:pan-y}
+svg.chart .lc-hover{pointer-events:none}
+svg.chart .lc-x{stroke:var(--ink);stroke-opacity:.35;stroke-width:1px;stroke-dasharray:3 3;shape-rendering:crispEdges}
+svg.chart .lc-band{fill:var(--accent);fill-opacity:.07}
+.chart-tip{position:fixed;left:0;top:0;z-index:80;pointer-events:none;min-width:116px;max-width:260px;padding:9px 12px 10px;background:color-mix(in srgb,var(--surface) 92%,transparent);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);color:var(--ink);border:1px solid var(--line);border-radius:12px;box-shadow:0 8px 24px rgba(20,40,75,.14),0 1px 2px rgba(20,40,75,.08);font:500 12.5px/1.5 var(--font-ui);font-variant-numeric:tabular-nums;opacity:0;transform:scale(.97);transform-origin:var(--tip-origin,left bottom);transition:opacity 125ms cubic-bezier(.23,1,.32,1),transform 125ms cubic-bezier(.23,1,.32,1)}
+.chart-tip.on{opacity:1;transform:none}
+.chart-tip b{display:block;font:700 12.5px/1.4 var(--font-num);margin-bottom:3px;letter-spacing:.01em}
+.chart-tip .r{display:flex;align-items:center;gap:7px}
+.chart-tip .r i{flex:none;width:8px;height:8px;border-radius:2px}
+.chart-tip .r span{color:var(--muted)}
+.chart-tip .r em{font:600 13px var(--font-num);font-style:normal;margin-left:auto;padding-left:10px}
+@media (prefers-reduced-motion:reduce){ .chart-tip{transform:none;transition:opacity 125ms ease} }
+/* 막대(폭포·레그) 그래프: 슬라이더를 끌 때마다 바뀌므로 짧고 단단한 ease-out */
+.bchart .bar,.bchart .ghost{border-radius:3px;transition:top 160ms cubic-bezier(.23,1,.32,1),height 160ms cubic-bezier(.23,1,.32,1)}
+.bchart .link,.bchart .val{transition:top 160ms cubic-bezier(.23,1,.32,1)}
+.bchart .gl{border-top-color:color-mix(in srgb,var(--line) 75%,transparent)}
+.bchart .gl.zero{border-top:1px solid color-mix(in srgb,var(--ink) 45%,transparent)}
+.bchart .plot{border-left-color:transparent}
+@media (hover:hover) and (pointer:fine){ .bchart .c:hover .bar{filter:brightness(1.08)} .bchart .c:hover .val{color:var(--accent)} }
+@media (prefers-reduced-motion:reduce){ .bchart .bar,.bchart .ghost,.bchart .link,.bchart .val{transition:none} }
+
+/* 과거 자료 관리 */
+.rh-sum b{color:var(--ink)}
+.rh-yr{display:flex;align-items:center;gap:8px}
+.rh-yr select{flex:1 1 auto;text-align:center}
+.rh-yr .btn{width:38px;height:38px;padding:0;border-radius:50%;font-size:18px;line-height:1}
+.rh-months{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px}
+@media (max-width:420px){ .rh-months{grid-template-columns:repeat(4,minmax(0,1fr))} }
+.rh-m{display:flex;flex-direction:column;align-items:center;gap:1px;padding:7px 0 6px;border:1px solid var(--line);border-radius:12px;background:var(--surface);color:var(--muted);font:600 var(--t-small) var(--font-ui);cursor:pointer;transition:background-color 160ms ease,border-color 160ms ease,color 160ms ease,transform 140ms var(--ease-out)}
+.rh-m small{font:500 11px var(--font-num);opacity:.8}
+.rh-m.has{color:var(--ink);background:color-mix(in srgb,var(--accent) 7%,var(--surface));border-color:color-mix(in srgb,var(--accent) 25%,var(--line))}
+.rh-m.cur{box-shadow:inset 0 -2px 0 var(--accent)}
+.rh-m.on{background:var(--ink);border-color:var(--ink);color:var(--bg-ink)}
+.rh-m:active{transform:scale(.96)}
+@media (hover:hover) and (pointer:fine){ .rh-m:not(.on):hover{border-color:var(--accent)} .rh-d:not(.on):hover{border-color:var(--accent);color:var(--ink)} }
+.rh-days{display:flex;flex-wrap:wrap;gap:6px;min-height:22px}
+.rh-d{position:relative;padding:5px 11px;border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--muted);font:600 var(--t-small) var(--font-num);cursor:pointer;transition:background-color 160ms ease,border-color 160ms ease,color 160ms ease,transform 140ms var(--ease-out)}
+.rh-d.pc::after{content:"";position:absolute;top:3px;right:3px;width:5px;height:5px;border-radius:50%;background:var(--pos)}
+.rh-d.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.rh-d:active{transform:scale(.95)}
+.rh-prog{height:6px;border-radius:999px;background:var(--chip);overflow:hidden}
+.rh-prog i{display:block;height:100%;background:var(--accent);transform-origin:left;transform:scaleX(0);transition:transform 300ms var(--ease-out)}
+.rt-ctl{display:flex;gap:10px;margin-bottom:6px}
+.rt-ctl .f{max-width:160px}
+@media (prefers-reduced-motion:reduce){ .rh-m,.rh-d,.rh-prog i{transition:none} .rh-m:active,.rh-d:active{transform:none} }
+
+/* 기준일: 달력 입력 + 년·월·일 선택 */
+.rc-dpick{display:grid;grid-template-columns:minmax(0,1fr);gap:10px;align-items:end}
+.rc-ymd select{padding-right:24px;background-position:calc(100% - 13px) 55%,calc(100% - 8px) 55%}
+.rc-ymd{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr) minmax(0,1fr);gap:6px}
+@media (max-width:520px){ .rc-dpick{grid-template-columns:minmax(0,1fr)} }
+
+/* 계산기의 '공통 금리커브 가져오기' */
+.rc-pull{display:flex;align-items:flex-end;gap:8px;flex-wrap:wrap}
+.rc-pull .f{flex:1 1 200px}
+.rc-pull .hint{flex:1 1 220px;align-self:center}
+.btn.rc-btn{background:var(--accent);border-color:var(--accent);color:#fff;white-space:nowrap}
+@media (hover:hover) and (pointer:fine){ .btn.rc-btn:hover{background:var(--ink);border-color:var(--ink);color:var(--bg-ink)} }
+
+/* 금리 기준일 (PRS 등): 날짜 입력 + 년·월·일 */
+.rc-dwrap{flex:1 1 100%;display:flex;flex-direction:column;gap:4px;min-width:0}
+.rc-dwrap input[type=date],.rc-dwrap .rc-ymd select{font:500 var(--t-input) var(--font-num);display:block;width:100%;min-width:0;box-sizing:border-box;color:var(--ink);background:var(--field);border:1px solid var(--line);border-radius:12px;padding:9px 10px;appearance:none;-webkit-appearance:none;transition:border-color 160ms ease,box-shadow 160ms ease}
+.rc-dwrap .rc-ymd select{font-family:var(--font-ui);padding-right:24px;background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);background-position:calc(100% - 13px) 55%,calc(100% - 8px) 55%;background-size:5px 5px;background-repeat:no-repeat}
+.rc-dwrap input[type=date]:focus,.rc-dwrap .rc-ymd select:focus{outline:none;border-color:var(--accent);background-color:var(--surface);box-shadow:0 0 0 4px color-mix(in srgb,var(--accent) 16%,transparent)}
+.rc-pull>.btn.rc-btn{align-self:flex-end}
+.rc-pull .f.rc-dwrap{flex:1 1 100%}
+
+/* 가져올 금리 선택 (각 계산기 금리표 바로 위) */
+.rcp-box{display:flex;flex-direction:column;gap:8px;padding:12px 14px;border:1px solid var(--line);border-radius:14px;background:var(--chip)}
+.rcp-head{font:700 var(--t-body) var(--font-ui);color:var(--ink);display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+.rcp-head .hint{font-weight:500}
+.rcp{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 8px;align-items:center}
+.rcp .rcp-lab{grid-column:1 / -1}
+.rcp-grade[hidden]+*{display:none}
+.rcp:has(.rcp-grade[hidden]) .rcp-seg{grid-column:1 / -1}
+.rcp-lab{font:600 var(--t-small) var(--font-ui);color:var(--muted)}
+.rcp-seg{display:flex}
+.rcp-seg button{padding:7px 6px;font-size:var(--t-small);white-space:nowrap}
+.rcp-grade{min-width:84px}
+@media (max-width:560px){ .rcp{grid-template-columns:minmax(0,1fr) auto} .rcp-lab{grid-column:1 / -1} }
+
+.prs-ytm-cap{font:700 var(--t-body) var(--font-ui);color:var(--ink);margin-top:4px}
+.prs-ytm-cap span{font-weight:500;color:var(--muted)}
+.ytm-tbl th small{display:block;font-size:11px;font-weight:500;color:var(--muted)}
+/* ── 아이폰 홈 화면 앱 ── */
+html{-webkit-tap-highlight-color:transparent}
+body{padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px);-webkit-touch-callout:none}
+.boot-err{margin:24px 16px;padding:16px;border:1px solid var(--neg);border-radius:14px;color:var(--neg);background:var(--surface);font-size:14px;line-height:1.6}
+.upd-bar{position:fixed;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));z-index:80;display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--ink);color:var(--bg-ink);border-radius:14px;padding:10px 14px;font-size:13.5px;box-shadow:var(--sh-3)}
+.upd-bar button{font:600 13px var(--font-ui);border:0;border-radius:9px;padding:7px 12px;background:var(--accent);color:#fff}
+.maker-calc{display:none!important}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div class="notice-top" role="note">[참고용 계산 도구이며, 공식 평가에는 사용을 금지합니다.]</div>
+  <header>
+    <div class="kicker" id="app-kicker">Valuation Toolkit</div>
+    <div class="hdr-l">
+      <button type="button" class="btn back" id="home-btn" hidden aria-label="홈으로">← 홈</button>
+      <h1 id="app-title">Financial Calculator</h1>
+      <span class="maker maker-calc" id="maker-calc" hidden></span>
+    </div>
+    <div class="hdr-r">
+      <span class="user-chip" id="user-chip" hidden>사용자 : <b id="user-name"></b> <button type="button" class="btn ghost" id="user-change">변경</button></span>
+      <button class="btn xl" id="xlsx-btn" hidden>엑셀로 내려받기</button>
+      <span class="chip loading" id="engine"><i></i><span id="engineText">Rust 엔진 준비 중</span></span>
+    </div>
+    <div class="xl-status" id="xlsx-status" aria-live="polite" hidden></div>
+  </header>
+
+  <!-- ───────── 홈 ───────── -->
+  <section class="view home" id="view-home">
+    <div class="home-head"><p class="home-lead">계산기를 고르세요. 각 계산기는 엑셀 평가모형과 같은 방식으로 Rust 엔진이 계산합니다.</p></div>
+    <div class="launch">
+      <button type="button" class="tile wide" data-go="rates" id="go-rates">
+        <span class="tile-k">국고채 · 회사채 AAA~BBB- · 미국채 · Bootstrapping</span>
+        <span class="tile-t">공통 금리커브</span>
+        <span class="tile-d">고시 수익률을 선형보간·부트스트랩해 제로금리·할인계수·선도금리를 만들고, 모든 계산기가 이 커브를 골라 쓸 수 있습니다. PC 앱은 인터넷에서 그날 금리를 바로 받아옵니다.</span>
+        <svg class="tile-g" viewBox="0 0 120 48" aria-hidden="true"><path d="M4 38 C30 30 50 22 116 14" fill="none" stroke="var(--line)" stroke-width="2" stroke-dasharray="4 4"/><path d="M4 36 C30 26 55 18 116 10" fill="none" stroke="var(--accent)" stroke-width="3"/><path d="M4 30 C35 14 60 10 116 6" fill="none" stroke="var(--usd)" stroke-width="2"/></svg>
+        <span class="tile-meta" id="meta-rates"></span>
+      </button>
+      <button type="button" class="tile" data-go="swap" id="go-swap">
+        <span class="tile-k">IRS (Interest Rate Swap) · CRS (Cross Currency Swap) · 금리커브</span>
+        <span class="tile-t">금리 스왑 계산기</span>
+        <span class="tile-d">스왑 NPV (Net Present Value)와 공정가치 금리, 금리 평행이동 시뮬레이션, 시장 커브 반영</span>
+        <svg class="tile-g" viewBox="0 0 120 48" aria-hidden="true"><path d="M4 40 C30 38 40 20 60 18 S95 8 116 6" fill="none" stroke="var(--accent)" stroke-width="3"/><path d="M4 30 L116 30" stroke="var(--line)" stroke-width="2" stroke-dasharray="4 4"/></svg>
+        <span class="tile-meta" id="meta-swap"></span>
+      </button>
+      <button type="button" class="tile" data-go="option" id="go-option">
+        <span class="tile-k">이항모형 · 유러피언 / 아메리칸</span>
+        <span class="tile-t">옵션 계산기</span>
+        <span class="tile-d">계약수량 기준 평가금액과 그릭스, 이자율연동 행사가, 주가·주가 변동성 시뮬레이션</span>
+        <svg class="tile-g" viewBox="0 0 120 48" aria-hidden="true"><path d="M4 42 L60 42 L116 6" fill="none" stroke="var(--line)" stroke-width="2"/><path d="M4 40 C40 39 55 34 70 26 S100 10 116 6" fill="none" stroke="var(--usd)" stroke-width="3"/></svg>
+        <span class="tile-meta" id="meta-option"></span>
+      </button>
+      <button type="button" class="tile" data-go="prs" id="go-prs">
+        <span class="tile-k">PRS (Price Return Swap) · 주가수익스왑 · 이항트리</span>
+        <span class="tile-t">PRS 계산기</span>
+        <span class="tile-d">고정수익(A)·변동수익 정산분(B) 공정가치, 주가(지분가치)·환율·금리 슬라이더 시뮬레이션</span>
+        <svg class="tile-g" viewBox="0 0 120 48" aria-hidden="true"><path d="M4 24 L116 24" stroke="var(--line)" stroke-width="2" stroke-dasharray="4 4"/><path d="M4 44 C30 40 45 30 60 24 S95 8 116 4" fill="none" stroke="var(--pos)" stroke-width="3"/></svg>
+        <span class="tile-meta" id="meta-prs"></span>
+      </button>
+      <button type="button" class="tile" data-go="cb" id="go-cb">
+        <span class="tile-k">CB (Convertible Bond) · EB (Exchangeable Bond) · BW (Bond with Warrant) · 콜/풋 옵션부 사채</span>
+        <span class="tile-t">내재파생 사채 계산기</span>
+        <span class="tile-d">금리 이항트리 BDT (Black–Derman–Toy)로 사채·조기상환·매도청구권, 주가 이항트리 TF (Tsiveriotis–Fernandes)로 전환권·신주인수권을 평가하고 Z-spread (Zero-volatility spread)를 함께 표시</span>
+        <svg class="tile-g" viewBox="0 0 120 48" aria-hidden="true"><path d="M4 30 L116 30" stroke="var(--line)" stroke-width="2" stroke-dasharray="4 4"/><path d="M4 30 C40 30 60 26 80 18 S105 6 116 4" fill="none" stroke="var(--accent)" stroke-width="3"/><path d="M50 44 L116 8" stroke="var(--usd)" stroke-width="2"/></svg>
+        <span class="tile-meta" id="meta-cb"></span>
+      </button>
+      <button type="button" class="tile" data-go="fx" id="go-fx">
+        <span class="tile-k">선물환 · 금리평형</span>
+        <span class="tile-t">통화선도 계산기</span>
+        <span class="tile-d">KRW·USD 금리커브로 결제일 선도환율과 스왑포인트를 구하고, 약정환율 대비 평가금액, 현물환율·금리 시뮬레이션</span>
+        <svg class="tile-g" viewBox="0 0 120 48" aria-hidden="true"><path d="M4 26 L116 26" stroke="var(--line)" stroke-width="2" stroke-dasharray="4 4"/><path d="M4 20 C40 22 80 28 116 34" fill="none" stroke="var(--usd)" stroke-width="3"/><circle cx="96" cy="31" r="4" fill="var(--surface)" stroke="var(--accent)" stroke-width="2.5"/></svg>
+        <span class="tile-meta" id="meta-fx"></span>
+      </button>
+      <button type="button" class="tile" data-go="fin" id="go-fin">
+        <span class="tile-k">TVM · NPV · IRR · 채권 · 감가상각 · 통계</span>
+        <span class="tile-t">재무계산기</span>
+        <span class="tile-d">BA II Plus 계열 재무계산기와 같은 계산 규칙. 워크시트 입력 화면과 실제 키패드 화면을 오가며 같은 값으로 계산</span>
+        <svg class="tile-g" viewBox="0 0 120 48" aria-hidden="true"><rect x="38" y="4" width="44" height="40" rx="5" fill="none" stroke="var(--accent)" stroke-width="2.5"/><rect x="44" y="9" width="32" height="9" rx="2" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="1.5"/><g fill="var(--accent)"><rect x="44" y="23" width="8" height="6" rx="1.5"/><rect x="56" y="23" width="8" height="6" rx="1.5"/><rect x="68" y="23" width="8" height="6" rx="1.5"/><rect x="44" y="33" width="8" height="6" rx="1.5"/><rect x="56" y="33" width="8" height="6" rx="1.5"/><rect x="68" y="33" width="8" height="6" rx="1.5" fill="var(--usd)"/></g></svg>
+        <span class="tile-meta" id="meta-fin"></span>
+      </button>
+    </div>
+  </section>
+
+  <div class="view" id="view-swap" hidden>
+  <nav class="tabs" role="tablist">
+    <button role="tab" id="tab-irs" aria-selected="true" data-tab="irs">IRS 금리스왑</button>
+    <button role="tab" id="tab-crs" aria-selected="false" data-tab="crs">CRS 통화스왑</button>
+    <button role="tab" id="tab-curve" aria-selected="false" data-tab="curve">금리커브</button>
+  </nav>
+
+  <!-- ───────── IRS ───────── -->
+  <section class="panel" id="panel-irs">
+    <div class="col col-in">
+    <div class="group saves" id="irs-saves"><fieldset>
+      <legend>평가 저장 · 불러오기</legend>
+      <div class="grid">
+        <label class="f full">평가계약명<input type="text" id="irs-save-name" maxlength="40" placeholder="예: A은행 IRS 5Y Pay" autocomplete="off"></label>
+        <div class="full save-row"><button type="button" class="btn primary" id="irs-save-btn">현재 평가 저장</button><span class="hint" id="irs-save-count"></span></div>
+        <label class="f">계약 선택<select id="irs-pick-name"><option value="">저장된 평가 없음</option></select></label>
+        <label class="f">평가시점 선택<select id="irs-pick-time" disabled><option value="">—</option></select></label>
+      </div>
+      <div class="save-msg" id="irs-save-msg" aria-live="polite"></div>
+      <div class="save-foot"><span class="hint" id="irs-save-where"></span><button type="button" class="btn ghost" id="irs-del-btn" disabled>선택한 평가 삭제</button></div>
+    </fieldset></div>
+    <div class="group"><fieldset>
+      <legend>거래 조건</legend>
+      <div class="grid">
+        <label class="f">기산일<input type="date" id="irs-effective" data-k="irs.effective"></label>
+        <label class="f">만기일<input type="date" id="irs-maturity" data-k="irs.maturity"></label>
+        <label class="f">평가일<input type="date" id="irs-valuation" data-k="irs.valuation"></label>
+        <label class="f">Notional (원)<input type="text" inputmode="decimal" autocomplete="off" data-money id="irs-notional" data-k="irs.notional"><span class="hint" id="irs-notional-h"></span></label>
+        <label class="f full">거래 방향<select id="irs-direction" data-k="irs.direction"><option>Pay Fixed</option><option>Receive Fixed</option></select></label>
+      </div>
+    </fieldset></div>
+
+    <div class="group"><fieldset>
+      <legend>고정 / 변동 레그</legend>
+      <div class="grid">
+        <label class="f">고정금리 (%)<input type="number" inputmode="decimal" step="any" id="irs-fixed_rate" data-k="irs.fixed_rate" data-pct></label>
+        <label class="f">변동 스프레드 (%)<input type="number" inputmode="decimal" step="any" id="irs-float_spread" data-k="irs.float_spread" data-pct></label>
+        <label class="f">고정 지급주기<select id="irs-fixed_freq" data-k="irs.fixed_freq" data-num class="freq"></select></label>
+        <label class="f">변동 지급주기<select id="irs-float_freq" data-k="irs.float_freq" data-num class="freq"></select></label>
+        <label class="f">고정 Day Count<select id="irs-fixed_dc" data-k="irs.fixed_dc" class="dc"></select></label>
+        <label class="f">변동 Day Count<select id="irs-float_dc" data-k="irs.float_dc" class="dc"></select></label>
+      </div>
+    </fieldset></div>
+
+    </div>
+    <div class="col col-out">
+    <div class="ticket">
+      <div class="eyebrow"><span>IRS (Interest Rate Swap) NPV (Net Present Value) · KRW</span><span id="irs-side"></span></div>
+      <div class="loaded-tag" id="irs-loaded" hidden></div>
+      <div class="npv" id="irs-npv">–</div>
+      <div class="fair" id="irs-fair"></div>
+      <div class="delta" id="irs-delta" hidden></div>
+      <div class="err" id="irs-err" hidden></div>
+      <div class="src" id="irs-src"></div>
+      <div class="stats">
+        <div class="stat"><span>고정 레그 PV (Present Value)</span><b id="irs-pvfix">–</b></div>
+        <div class="stat"><span>변동 레그 PV</span><b id="irs-pvflt">–</b></div>
+        <div class="stat"><span>PV01 (Price Value of 1bp · KRW +1bp)</span><b id="irs-pv01">–</b></div>
+        <div class="stat"><span>계약 고정금리</span><b id="irs-k">–</b></div>
+      </div>
+    </div>
+
+
+    <div class="group shift"><fieldset>
+      <legend>금리 평행이동 시뮬레이션</legend>
+      <div class="readout" id="irs-readout"></div>
+      <div class="slider">
+        <div class="srow"><label for="irs-shift-krw">KRW 커브</label><output id="irs-shift-krw-out">0bp</output></div>
+        <div class="srange">
+          <button type="button" class="nudge" data-nudge="-1" data-for="irs-shift-krw" aria-label="1bp 내리기">−</button>
+          <input type="range" min="-200" max="200" step="1" value="0" id="irs-shift-krw" data-shift="krw" aria-describedby="irs-shift-note">
+          <button type="button" class="nudge" data-nudge="1" data-for="irs-shift-krw" aria-label="1bp 올리기">+</button>
+        </div>
+        <div class="scale"><span>−200bp</span><span>0</span><span>+200bp</span></div>
+      </div>
+      <div class="sens">
+        <ul class="key">
+          <li><i class="lg-line" style="border-color:var(--accent)"></i>KRW 커브 이동 폭별 NPV</li>
+          <li><i class="lg-dash" style="border-color:var(--accent)"></i>현재 슬라이더 위치</li>
+          <li><i class="lg-zero"></i>NPV 0 기준선</li>
+          <li><i class="lg-dia" style="background:var(--accent)"></i>손익분기 (NPV가 0이 되는 이동 폭)</li>
+        </ul>
+        <div id="irs-sens"></div>
+        <div class="tablewrap sens-tbl" id="irs-sens-tbl"></div>
+        <p class="cap">KRW Par Rate 전 만기를 가로축만큼 함께 올리거나 내렸을 때의 스왑 NPV입니다. 선이 기준선 위면 이익, 아래면 손실입니다.</p>
+      </div>
+      <div class="wf-box prs-chart"><h3>슬라이더 효과 (폭포 그래프) <span class="unit">· 원</span></h3><div class="bchart" id="irs-wf"></div>
+        <p class="cap">슬라이더를 움직이기 전 NPV에서 KRW 금리 평행이동 효과를 더해 시나리오 NPV가 되는 과정입니다. 초록은 증가, 빨강은 감소입니다.</p></div>
+      <div class="srow"><span class="hint" id="irs-shift-note">시나리오 전용이라 금리커브 탭의 값은 바뀌지 않습니다.</span><button class="btn" data-shift-reset>0bp로</button></div>
+    </fieldset></div>
+    <div class="card">
+      <h2>기간별 현금흐름 PV</h2>
+      <div class="legend"><span><i class="dot" style="background:var(--accent)"></i>고정 레그</span><span><i class="dot" style="background:var(--usd)"></i>변동 레그</span></div>
+      <div id="irs-chart"></div>
+    </div>
+    <details><summary>고정 레그 현금흐름 표</summary><div class="tablewrap" id="irs-tbl-fixed"></div></details>
+    <details><summary>변동 레그 현금흐름 표</summary><div class="tablewrap" id="irs-tbl-float"></div></details>
+    </div>
+  </section>
+
+  <!-- ───────── CRS ───────── -->
+  <section class="panel" id="panel-crs" hidden>
+    <div class="col col-in">
+    <div class="group saves" id="crs-saves"><fieldset>
+      <legend>평가 저장 · 불러오기</legend>
+      <div class="grid">
+        <label class="f full">평가계약명<input type="text" id="crs-save-name" maxlength="40" placeholder="예: A은행 CRS 5Y KRW/USD" autocomplete="off"></label>
+        <div class="full save-row"><button type="button" class="btn primary" id="crs-save-btn">현재 평가 저장</button><span class="hint" id="crs-save-count"></span></div>
+        <label class="f">계약 선택<select id="crs-pick-name"><option value="">저장된 평가 없음</option></select></label>
+        <label class="f">평가시점 선택<select id="crs-pick-time" disabled><option value="">—</option></select></label>
+      </div>
+      <div class="save-msg" id="crs-save-msg" aria-live="polite"></div>
+      <div class="save-foot"><span class="hint" id="crs-save-where"></span><button type="button" class="btn ghost" id="crs-del-btn" disabled>선택한 평가 삭제</button></div>
+    </fieldset></div>
+    <div class="group"><fieldset>
+      <legend>거래 조건 · 원금</legend>
+      <div class="grid">
+        <label class="f">기산일<input type="date" id="crs-effective" data-k="crs.effective"></label>
+        <label class="f">만기일<input type="date" id="crs-maturity" data-k="crs.maturity"></label>
+        <label class="f">평가일<input type="date" id="crs-valuation" data-k="crs.valuation"></label>
+        <label class="f">USD Notional<input type="text" inputmode="decimal" autocomplete="off" data-money id="crs-usd_notional" data-k="crs.usd_notional"><span class="hint" id="crs-krwn-h"></span></label>
+        <label class="f">최초 교환환율<input type="text" inputmode="decimal" autocomplete="off" data-money id="crs-fx_initial" data-k="crs.fx_initial"></label>
+        <label class="f">평가시점 환율<input type="text" inputmode="decimal" autocomplete="off" data-money id="crs-fx_valuation" data-k="crs.fx_valuation"></label>
+        <label class="f full">원금교환<select id="crs-exchange" data-k="crs.exchange"><option>기초+만기 교환</option><option>만기 교환만</option><option>교환 없음</option></select></label>
+        <label class="f full">거래 방향<select id="crs-direction" data-k="crs.direction"><option>KRW 지급 / USD 수취</option><option>USD 지급 / KRW 수취</option></select></label>
+      </div>
+    </fieldset></div>
+
+    <div class="group"><fieldset>
+      <legend class="legtitle"><i class="dot" style="background:var(--accent)"></i>KRW Leg</legend>
+      <div class="grid">
+        <label class="f">종류<select id="crs-krw_type" data-k="crs.krw_type"><option>Fixed</option><option>Floating</option></select></label>
+        <label class="f" id="w-krw-fix">KRW 고정금리 (%)<input type="number" inputmode="decimal" step="any" id="crs-krw_fixed_rate" data-k="crs.krw_fixed_rate" data-pct></label>
+        <label class="f" id="w-krw-spr">KRW 스프레드 (%)<input type="number" inputmode="decimal" step="any" id="crs-krw_spread" data-k="crs.krw_spread" data-pct></label>
+        <label class="f">지급주기<select id="crs-krw_freq" data-k="crs.krw_freq" data-num class="freq"></select></label>
+        <label class="f">Day Count<select id="crs-krw_dc" data-k="crs.krw_dc" class="dc"></select></label>
+      </div>
+    </fieldset></div>
+
+    <div class="group"><fieldset>
+      <legend class="legtitle"><i class="dot" style="background:var(--usd)"></i>USD Leg</legend>
+      <div class="grid">
+        <label class="f">종류<select id="crs-usd_type" data-k="crs.usd_type"><option>Fixed</option><option>Floating</option></select></label>
+        <label class="f" id="w-usd-fix">USD 고정금리 (%)<input type="number" inputmode="decimal" step="any" id="crs-usd_fixed_rate" data-k="crs.usd_fixed_rate" data-pct></label>
+        <label class="f" id="w-usd-spr">USD 스프레드 (%)<input type="number" inputmode="decimal" step="any" id="crs-usd_spread" data-k="crs.usd_spread" data-pct></label>
+        <label class="f">지급주기<select id="crs-usd_freq" data-k="crs.usd_freq" data-num class="freq"></select></label>
+        <label class="f">Day Count<select id="crs-usd_dc" data-k="crs.usd_dc" class="dc"></select></label>
+      </div>
+    </fieldset></div>
+
+    </div>
+    <div class="col col-out">
+    <div class="ticket">
+      <div class="eyebrow"><span>CRS (Cross Currency Swap) NPV (Net Present Value) · KRW 환산</span><span id="crs-side"></span></div>
+      <div class="loaded-tag" id="crs-loaded" hidden></div>
+      <div class="npv" id="crs-npv">–</div>
+      <div class="fair" id="crs-fair"></div>
+      <div class="delta" id="crs-delta" hidden></div>
+      <div class="err" id="crs-err" hidden></div>
+      <div class="src" id="crs-src"></div>
+      <div class="stats">
+        <div class="stat"><span>KRW Leg 합계 PV (Present Value)</span><b id="crs-krw">–</b></div>
+        <div class="stat"><span>USD Leg 합계 PV</span><b id="crs-usd">–</b></div>
+        <div class="stat"><span>USD Leg PV (KRW 환산)</span><b id="crs-usdk">–</b></div>
+        <div class="stat"><span>KRW Notional</span><b id="crs-krwn">–</b></div>
+      </div>
+    </div>
+
+
+    <div class="group shift"><fieldset>
+      <legend>금리 평행이동 시뮬레이션</legend>
+      <div class="readout" id="crs-readout"></div>
+      <div class="slider">
+        <div class="srow"><label for="crs-shift-krw"><i class="dot" style="background:var(--accent)"></i> KRW 커브</label><output id="crs-shift-krw-out">0bp</output></div>
+        <div class="srange">
+          <button type="button" class="nudge" data-nudge="-1" data-for="crs-shift-krw" aria-label="1bp 내리기">−</button>
+          <input type="range" min="-200" max="200" step="1" value="0" id="crs-shift-krw" data-shift="krw">
+          <button type="button" class="nudge" data-nudge="1" data-for="crs-shift-krw" aria-label="1bp 올리기">+</button>
+        </div>
+        <div class="scale"><span>−200bp</span><span>0</span><span>+200bp</span></div>
+      </div>
+      <div class="slider usd">
+        <div class="srow"><label for="crs-shift-usd"><i class="dot" style="background:var(--usd)"></i> USD 커브</label><output id="crs-shift-usd-out">0bp</output></div>
+        <div class="srange">
+          <button type="button" class="nudge" data-nudge="-1" data-for="crs-shift-usd" aria-label="1bp 내리기">−</button>
+          <input type="range" min="-200" max="200" step="1" value="0" id="crs-shift-usd" data-shift="usd">
+          <button type="button" class="nudge" data-nudge="1" data-for="crs-shift-usd" aria-label="1bp 올리기">+</button>
+        </div>
+        <div class="scale"><span>−200bp</span><span>0</span><span>+200bp</span></div>
+      </div>
+      <div class="sens">
+        <ul class="key">
+          <li><i class="lg-line" style="border-color:var(--accent)"></i>KRW 커브만 이동 (USD는 현재 값 고정)</li>
+          <li><i class="lg-line" style="border-color:var(--usd)"></i>USD 커브만 이동 (KRW는 현재 값 고정)</li>
+          <li><i class="lg-dash"></i>현재 슬라이더 위치 (선 색 = 통화)</li>
+          <li><i class="lg-zero"></i>NPV 0 기준선</li>
+          <li><i class="lg-dia"></i>손익분기 (NPV가 0이 되는 이동 폭)</li>
+        </ul>
+        <div id="crs-sens"></div>
+        <div class="tablewrap sens-tbl" id="crs-sens-tbl"></div>
+        <p class="cap">한 통화의 Par Rate 전 만기를 가로축만큼 움직이고, 다른 통화는 슬라이더 값 그대로 둔 스왑 NPV(KRW 환산)입니다. 선이 가파를수록 그 통화 금리에 민감합니다.</p>
+      </div>
+      <div class="wf-box prs-chart"><h3>슬라이더 효과 (폭포 그래프) <span class="unit">· 원</span></h3><div class="bchart" id="crs-wf"></div>
+        <p class="cap">KRW 금리 → USD 금리 순서로 하나씩 반영했을 때 NPV가 얼마나 바뀌는지 보여줍니다. 변수끼리 영향을 주므로 순서에 따라 각 효과는 조금 달라질 수 있습니다.</p></div>
+      <div class="srow"><span class="hint">시나리오 전용이라 금리커브 탭의 값은 바뀌지 않습니다.</span><button class="btn" data-shift-reset>0bp로</button></div>
+    </fieldset></div>
+    <div class="card">
+      <h2>PV 구성 (KRW 환산)</h2>
+      <div id="crs-break"></div>
+    </div>
+    <div class="card">
+      <h2>기간별 이자 PV (KRW 환산)</h2>
+      <div class="legend"><span><i class="dot" style="background:var(--accent)"></i>KRW Leg</span><span><i class="dot" style="background:var(--usd)"></i>USD Leg</span></div>
+      <div id="crs-chart"></div>
+    </div>
+    <details><summary>KRW Leg 현금흐름 표</summary><div class="tablewrap" id="crs-tbl-krw"></div></details>
+    <details><summary>USD Leg 현금흐름 표</summary><div class="tablewrap" id="crs-tbl-usd"></div></details>
+    </div>
+  </section>
+
+  <!-- ───────── Curve ───────── -->
+  <section class="panel" id="panel-curve" hidden>
+    <div class="col col-in">
+    <div class="group market">
+      <fieldset>
+        <legend>시장 금리 반영</legend>
+        <div class="grid">
+          <div class="full rc-pull"><span class="hint">아래 표 바로 위에서 KRW·USD 열에 넣을 금리를 고른 뒤 누르세요.</span><button type="button" class="btn rc-btn" id="mkt-rc">공통 금리커브 가져오기</button></div>
+          <label class="f">기준일<input type="date" id="mkt-date"></label>
+          <div class="mkt-btn"><button class="btn" id="mkt-load">ECOS 시장금리 반영</button></div>
+          <label class="check full"><input type="checkbox" id="mkt-setval"> IRS·CRS 평가일도 이 기준일로 바꾸기</label>
+        </div>
+        <div class="mkt-status" id="mkt-status" aria-live="polite"></div>
+        <div class="hint" id="mkt-range"></div>
+      </fieldset>
+    </div>
+    <div class="group"><div class="rcp-box"><div class="rcp-head">가져올 금리 선택 <span class="hint">고른 뒤 위의 '공통 금리커브 가져오기'를 누르세요</span></div><div class="rcp" data-rcp="curve.pick_krw" data-def="ktb"><span class="rcp-lab">KRW 열</span><div class="seg rcp-seg" role="radiogroup" aria-label="KRW 열"><button type="button" role="radio" data-v="ktb">원화 국고채</button><button type="button" role="radio" data-v="ust">달러 국고채</button><button type="button" role="radio" data-v="corp">회사채</button></div><select class="rc-sel rcp-grade" aria-label="회사채 신용등급"></select></div><div class="rcp" data-rcp="curve.pick_usd" data-def="ust"><span class="rcp-lab">USD 열</span><div class="seg rcp-seg" role="radiogroup" aria-label="USD 열"><button type="button" role="radio" data-v="ktb">원화 국고채</button><button type="button" role="radio" data-v="ust">달러 국고채</button><button type="button" role="radio" data-v="corp">회사채</button></div><select class="rc-sel rcp-grade" aria-label="회사채 신용등급"></select></div></div></div>
+    <div class="card" style="padding:0">
+      <div class="tablewrap curve-table" style="border-top:0" id="curve-tbl"></div>
+    </div>
+    </div>
+    <div class="col col-out">
+    <div class="card">
+      <h2>제로커브 (Par → Zero 부트스트래핑)</h2>
+      <div class="legend"><span><i class="dot" style="background:var(--accent)"></i>KRW Zero</span><span><i class="dot" style="background:var(--usd)"></i>USD Zero</span></div>
+      <div id="curve-chart"></div>
+    </div>
+    <p class="note">Par Rate를 바꾸면 제로금리가 다시 부트스트래핑되고 IRS·CRS 결과에 바로 반영됩니다. IRS는 KRW 커브를 씁니다.</p>
+    <p class="note">시장 커브 출처: KRW는 한국은행 ECOS (Economic Statistics System) 시장금리(3M CD (Certificate of Deposit) 91일, 6M KORIBOR (Korea Interbank Offered Rate) 6개월, 1~30Y 국고채), USD는 미 재무부 Daily Par Yield Curve입니다. 4Y·7Y·15Y는 앞뒤 만기를 선형보간했습니다. 스왑금리가 아닌 국채 수익률이므로 스왑 스프레드만큼 차이가 나는 근사치입니다.</p>
+    </div>
+  </section>
+  </div>
+
+  <!-- ───────── 옵션 계산기 ───────── -->
+  <div class="view" id="view-option" hidden>
+  <section class="panel" id="panel-opt">
+    <div class="col col-in">
+    <div class="group saves" id="opt-saves"><fieldset>
+      <legend>평가 저장 · 불러오기</legend>
+      <div class="grid">
+        <label class="f full">평가계약명<input type="text" id="opt-save-name" maxlength="40" placeholder="예: B사 주식 풋옵션 (아메리칸)" autocomplete="off"></label>
+        <div class="full save-row"><button type="button" class="btn primary" id="opt-save-btn">현재 평가 저장</button><span class="hint" id="opt-save-count"></span></div>
+        <label class="f">계약 선택<select id="opt-pick-name"><option value="">저장된 평가 없음</option></select></label>
+        <label class="f">평가시점 선택<select id="opt-pick-time" disabled><option value="">—</option></select></label>
+      </div>
+      <div class="save-msg" id="opt-save-msg" aria-live="polite"></div>
+      <div class="save-foot"><span class="hint" id="opt-save-where"></span><button type="button" class="btn ghost" id="opt-del-btn" disabled>선택한 평가 삭제</button></div>
+    </fieldset></div>
+    <div class="group"><fieldset>
+      <legend>계약 조건</legend>
+      <div class="grid">
+        <label class="f">평가시점<input type="date" id="opt-valuation" data-k="opt.valuation"></label>
+        <label class="f">옵션계약 만기<input type="date" id="opt-maturity" data-k="opt.maturity"></label>
+        <label class="f">주가 (S0)<input type="text" inputmode="decimal" autocomplete="off" data-money id="opt-spot" data-k="opt.spot"></label>
+        <label class="f">행사가격 (K0)<input type="text" inputmode="decimal" autocomplete="off" data-money id="opt-strike" data-k="opt.strike"></label>
+        <label class="f full">계약수량 (옵션 개수)<input type="text" inputmode="decimal" autocomplete="off" data-money id="opt-quantity" data-k="opt.quantity"><span class="hint" id="opt-qty-h"></span></label>
+        <label class="f">행사가격 결정방식<select id="opt-strike_mode" data-k="opt.strike_mode"><option>고정행사가</option><option>이자율연동(IRR)</option></select></label>
+        <label class="f" id="w-opt-irr">행사가 이자율 (계약 IRR · Internal Rate of Return, %)<input type="number" inputmode="decimal" step="any" id="opt-strike_irr" data-k="opt.strike_irr" data-pct></label>
+        <label class="f">옵션 종류<select id="opt-kind" data-k="opt.kind"><option>콜</option><option>풋</option></select></label>
+        <label class="f">옵션 스타일<select id="opt-style" data-k="opt.style"><option>유러피언</option><option>아메리칸</option></select></label>
+        <label class="f full">스텝 단위 (이항트리 1스텝)<select id="opt-step" data-k="opt.step"><option>일간</option><option>주간</option></select></label>
+      </div>
+    </fieldset></div>
+    <div class="group"><fieldset>
+      <legend>무위험이자율</legend>
+      <div class="grid">
+        <div class="full"><div class="rcp-box"><div class="rcp-head">가져올 금리 선택 <span class="hint">고른 커브의 잔존만기 제로금리를 넣습니다</span></div><div class="rcp" data-rcp="opt.pick" data-def="ktb"><span class="rcp-lab">무위험이자율</span><div class="seg rcp-seg" role="radiogroup" aria-label="무위험이자율"><button type="button" role="radio" data-v="ktb">원화 국고채</button><button type="button" role="radio" data-v="ust">달러 국고채</button><button type="button" role="radio" data-v="corp">회사채</button></div><select class="rc-sel rcp-grade" aria-label="회사채 신용등급"></select></div></div></div>
+        <label class="f">고시 금리 (%)<input type="number" inputmode="decimal" step="any" id="opt-rate_quoted" data-k="opt.rate_quoted" data-pct></label>
+        <label class="f">고시금리 복리방식<select id="opt-rate_comp" data-k="opt.rate_comp"><option>단리(연1회복리)</option><option>연 2회 복리</option><option>연 4회 복리</option><option>연 12회 복리(월복리)</option></select></label>
+        <div class="full opt-r"><span class="hint" id="opt-r-out"></span><button type="button" class="btn rc-btn" id="opt-rc">공통 금리커브 가져오기</button><button type="button" class="btn" id="opt-rate-mkt">ECOS 무위험금리 불러오기</button></div>
+        <div class="full save-msg" id="opt-rate-msg"></div>
+      </div>
+    </fieldset></div>
+    <div class="group"><fieldset>
+      <legend>주가 변동성 (σ)</legend>
+      <div class="grid">
+        <div class="full hint">두 가지 방법 중 하나를 씁니다. <b>① 종가로 계산</b>: 아래 종가 칸에 종가를 붙여넣으면 연율 변동성을 자동 계산합니다. <b>② 직접 입력</b>: 오른쪽 칸에 변동성(%)을 바로 넣습니다(예: 30% → 30). 어느 쪽이든 입력하면 그 방법으로 바뀌고, 입력 방식에서 직접 고를 수도 있습니다.</div>
+        <label class="f">입력 방식<select id="opt-vol_mode" data-k="opt.vol_mode"><option>종가로 계산</option><option>직접 입력</option></select></label>
+        <label class="f vol-alt" id="w-opt-sig">② 직접 입력 (연율, %) <span class="vol-tag" id="opt-sig-tag"></span><input type="number" inputmode="decimal" step="any" id="opt-sigma_direct" data-k="opt.sigma_direct" data-pct></label>
+        <label class="f vol-alt" id="w-opt-freq">① 종가로 계산 · 가격 주기<select id="opt-vol_freq" data-k="opt.vol_freq"><option>일별</option><option>주별</option><option>월별</option></select></label>
+        <label class="f vol-alt" id="w-opt-n">관측 개수 (N, 최대 500)<input type="number" inputmode="numeric" step="1" min="2" max="500" id="opt-vol_n" data-k="opt.vol_n"></label>
+        <label class="f full vol-alt" id="w-opt-px">종가 <span class="vol-tag" id="opt-px-tag"></span> (엑셀에서 열 하나를 복사해 붙여넣기 · 한 줄에 하나)<textarea id="opt-prices" rows="5" spellcheck="false" autocomplete="off"></textarea></label>
+        <div class="full hint" id="opt-vol-out"></div>
+      </div>
+    </fieldset></div>
+    </div>
+    <div class="col col-out">
+    <div class="ticket">
+      <div class="eyebrow"><span>옵션 평가금액 · 총액</span><span id="opt-side"></span></div>
+      <div class="loaded-tag" id="opt-loaded" hidden></div>
+      <div class="npv" id="opt-price">–</div>
+      <div class="unit-line" id="opt-unit"></div>
+      <div class="fair" id="opt-method"></div>
+      <div class="err" id="opt-err" hidden></div>
+      <div class="opt-warn" id="opt-warn" hidden></div>
+      <div class="stats">
+        <div class="stat"><span>만기 유효 행사가 (K_T)</span><b id="opt-kt">–</b></div>
+        <div class="stat"><span>내재가치 (총액)</span><b id="opt-intr">–</b></div>
+        <div class="stat"><span>시간가치 (총액)</span><b id="opt-tv">–</b></div>
+        <div class="stat"><span id="opt-x-lab">조기행사 프리미엄</span><b id="opt-x">–</b></div>
+        <div class="stat"><span>만기 T · 스텝 n</span><b id="opt-tn">–</b></div>
+        <div class="stat"><span>σ · r (연속복리)</span><b id="opt-sr">–</b></div>
+        <div class="stat"><span>u · d</span><b id="opt-ud">–</b></div>
+        <div class="stat"><span>위험중립확률 p · dt</span><b id="opt-p">–</b></div>
+      </div>
+    </div>
+    <div class="group shift osim"><fieldset>
+      <legend>주가 · 주가 변동성 시뮬레이션</legend>
+      <div class="readout" id="opt-readout"></div>
+      <div class="slider">
+        <div class="srow"><label for="opt-sim-s"><i class="dot" style="background:var(--accent)"></i> 주가 변화</label><output id="opt-sim-s-out">0</output></div>
+        <div class="srange">
+          <button type="button" class="onudge" data-for="opt-sim-s" data-nudge="-1" aria-label="주가 변화 내리기">−</button>
+          <input type="range" min="-50" max="50" step="1" value="0" id="opt-sim-s" data-oshift="s">
+          <button type="button" class="onudge" data-for="opt-sim-s" data-nudge="1" aria-label="주가 변화 올리기">+</button>
+        </div>
+        <div class="scale"><span>−50%</span><span>0</span><span>+50%</span></div>
+      </div>
+      <div class="slider usd">
+        <div class="srow"><label for="opt-sim-v"><i class="dot" style="background:var(--usd)"></i> 주가 변동성 변화</label><output id="opt-sim-v-out">0</output></div>
+        <div class="srange">
+          <button type="button" class="onudge" data-for="opt-sim-v" data-nudge="-1" aria-label="주가 변동성 변화 내리기">−</button>
+          <input type="range" min="-20" max="20" step="0.5" value="0" id="opt-sim-v" data-oshift="v">
+          <button type="button" class="onudge" data-for="opt-sim-v" data-nudge="1" aria-label="주가 변동성 변화 올리기">+</button>
+        </div>
+        <div class="scale"><span>−20%p</span><span>0</span><span>+20%p</span></div>
+      </div>
+      <div class="sens">
+        <ul class="key">
+          <li><i class="lg-line" style="border-color:var(--accent)"></i>옵션 평가금액 총액 (현재 주가 변동성 시나리오)</li>
+          <li><i class="lg-line" style="border-color:var(--usd)"></i>지금 행사하면 받는 내재가치 총액 (오늘 행사가격 K0)</li>
+          <li><i class="lg-line" style="border-color:var(--neg)"></i><span id="opt-payoff-lab">만기 페이오프 총액 (만기 주가 기준, 할인 전)</span></li>
+          <li><i class="lg-dash" style="border-color:var(--accent)"></i>현재 슬라이더 위치</li>
+        </ul>
+        <div id="opt-sens"></div>
+        <div class="tablewrap sens-tbl" id="opt-sens-tbl"></div>
+        <p class="cap">가로축은 주가입니다. 파란 선(평가금액)과 갈색 선(지금 행사 시 내재가치)의 간격이 시간가치이고, 주가 변동성 슬라이더를 올리면 파란 선이 함께 올라갑니다. 빨간 선은 가로축을 <b>만기 시점 주가</b>로 볼 때 만기에 받는 금액(할인 전)이며, 이자율연동 행사가면 만기 행사가격 K_T로 계산합니다. 유러피언은 만기에만 행사할 수 있어 깊은 내가격 구간에서 파란 선이 갈색 선보다 낮아질 수 있습니다(아메리칸은 낮아지지 않음). 다른 입력값은 그대로 둡니다.</p>
+      </div>
+      <div class="wf-box prs-chart"><h3>슬라이더 효과 (폭포 그래프) <span class="unit">· 원</span></h3><div class="bchart" id="opt-wf"></div>
+        <p class="cap">주가 → 주가 변동성 순서로 하나씩 반영했을 때 평가금액 총액이 얼마나 바뀌는지 보여줍니다. 변수끼리 영향을 주므로 순서에 따라 각 효과는 조금 달라질 수 있습니다.</p></div>
+      <div class="srow"><span class="hint">시나리오 전용이라 입력 칸의 값은 바뀌지 않습니다.</span><button class="btn" id="opt-sim-reset">원위치</button></div>
+    </fieldset></div>
+    <div class="card">
+      <h2>민감도 (그릭스)</h2>
+      <div class="greeks" id="opt-greeks"></div>
+      <p class="cap">델타·감마는 이항트리 1·2스텝 노드 값으로 구했고, 베가(주가 변동성 +1%p)와 로(금리 +1bp)는 같은 이항모형을 다시 계산한 차이입니다.</p>
+    </div>
+    <details><summary>이항트리 미리보기 (처음 6스텝)</summary><div class="tablewrap" id="opt-tree"></div></details>
+    </div>
+  </section>
+  </div>
+
+  <!-- ───────── PRS ───────── -->
+  <div class="view" id="view-prs" hidden>
+  <section class="panel" id="panel-prs">
+    <div class="col col-in">
+    <div class="group saves" id="prs-saves"><fieldset>
+      <legend>평가 저장 · 불러오기</legend>
+      <div class="grid">
+        <label class="f full">평가계약명<input type="text" id="prs-save-name" maxlength="40" placeholder="예: A사 PRS" autocomplete="off"></label>
+        <div class="full save-row"><button type="button" class="btn primary" id="prs-save-btn">현재 평가 저장</button><span class="hint" id="prs-save-count"></span></div>
+        <label class="f">계약 선택<select id="prs-pick-name"><option value="">저장된 평가 없음</option></select></label>
+        <label class="f">평가시점 선택<select id="prs-pick-time" disabled><option value="">—</option></select></label>
+      </div>
+      <div class="save-msg" id="prs-save-msg" aria-live="polite"></div>
+      <div class="save-foot"><span class="hint" id="prs-save-where"></span><button type="button" class="btn ghost" id="prs-del-btn" disabled>선택한 평가 삭제</button></div>
+    </fieldset></div>
+    <div class="group"><fieldset>
+      <legend>평가 모형</legend>
+      <div class="grid">
+        <label class="f full">모형 선택<select id="prs-model" data-k="prs.model">
+          <option value="excel" id="prs-model-opt-excel">CVA·DVA 조정 방식 — 신용위험 반영 할인 (고정수익 AA-, 트리 q·국고채 + (1−q)·AA-)</option>
+          <option value="crr">순수 CRR — 무위험 할인 (위험중립확률·할인 모두 국고채)</option>
+        </select></label>
+        <div class="full hint" id="prs-model-h"></div>
+      </div>
+    </fieldset></div>
+    <div class="group"><fieldset>
+      <legend>금리 시장데이터 · YTM 표</legend>
+      <div class="grid">
+        <div class="full rc-pull">
+          <div class="f rc-dwrap"><span class="flab">금리 기준일 (공통 금리커브)</span>
+            <div class="rc-dpick"><input type="date" id="prs-rc-date" aria-label="금리 기준일" aria-describedby="prs-rc-h">
+              <div class="rc-ymd" role="group" aria-label="금리 기준일 년·월·일 선택"><select id="prs-rc-y" aria-label="년"></select><select id="prs-rc-m" aria-label="월"></select><select id="prs-rc-d" aria-label="일"></select></div></div></div>
+        </div>
+        <div class="full hint" id="prs-rc-h"></div>
+        <div class="full"><div class="rcp-box"><div class="rcp-head">가져올 금리 선택 <span class="hint">무위험 열과 신용 열에 넣을 금리를 각각 고르세요</span></div><div class="rcp" data-rcp="prs.pick_gov" data-def="ktb"><span class="rcp-lab">무위험 열 (국고채 자리 · 위험중립확률·무위험 할인)</span><div class="seg rcp-seg" role="radiogroup" aria-label="국고채 열 (무위험)"><button type="button" role="radio" data-v="ktb">원화 국고채</button><button type="button" role="radio" data-v="ust">달러 국고채</button><button type="button" role="radio" data-v="corp">회사채</button></div><select class="rc-sel rcp-grade" aria-label="회사채 신용등급"></select></div><div class="rcp" data-rcp="prs.pick_aa" data-def="AA-"><span class="rcp-lab">신용 열 (회사채 자리 · 고정수익·CVA/DVA 할인)</span><div class="seg rcp-seg" role="radiogroup" aria-label="회사채 AA- 열 (신용)"><button type="button" role="radio" data-v="ktb">원화 국고채</button><button type="button" role="radio" data-v="ust">달러 국고채</button><button type="button" role="radio" data-v="corp">회사채</button></div><select class="rc-sel rcp-grade" aria-label="회사채 신용등급"></select></div></div></div>
+        <div class="full rc-pull"><span class="hint">고른 두 금리를 위 기준일 자료로 아래 표에 넣습니다.</span><button type="button" class="btn rc-btn" id="prs-rc">공통 금리커브 가져오기</button></div>
+        <div class="full save-msg" id="prs-mkt-msg"></div>
+        <div class="full prs-ytm-cap">금리 YTM (연 %, 빈칸은 직전 만기 값) · <span id="prs-ytm-src"></span></div>
+        <div class="full"><div class="tablewrap ytm-tbl"><table><thead><tr><th>만기</th><th id="prs-th-gov">국고채</th><th id="prs-th-aa">회사채 AA-</th></tr></thead><tbody><tr><td>3M</td><td><input type="number" inputmode="decimal" step="any" data-ytm="gov_ytm:0" aria-label="국고채 3M"></td><td><input type="number" inputmode="decimal" step="any" data-ytm="aa_ytm:0" aria-label="AA- 3M"></td></tr><tr><td>6M</td><td><input type="number" inputmode="decimal" step="any" data-ytm="gov_ytm:1" aria-label="국고채 6M"></td><td><input type="number" inputmode="decimal" step="any" data-ytm="aa_ytm:1" aria-label="AA- 6M"></td></tr><tr><td>9M</td><td><input type="number" inputmode="decimal" step="any" data-ytm="gov_ytm:2" aria-label="국고채 9M"></td><td><input type="number" inputmode="decimal" step="any" data-ytm="aa_ytm:2" aria-label="AA- 9M"></td></tr><tr><td>1Y</td><td><input type="number" inputmode="decimal" step="any" data-ytm="gov_ytm:3" aria-label="국고채 1Y"></td><td><input type="number" inputmode="decimal" step="any" data-ytm="aa_ytm:3" aria-label="AA- 1Y"></td></tr><tr><td>1.5Y</td><td><input type="number" inputmode="decimal" step="any" data-ytm="gov_ytm:4" aria-label="국고채 1.5Y"></td><td><input type="number" inputmode="decimal" step="any" data-ytm="aa_ytm:4" aria-label="AA- 1.5Y"></td></tr><tr><td>2Y</td><td><input type="number" inputmode="decimal" step="any" data-ytm="gov_ytm:5" aria-label="국고채 2Y"></td><td><input type="number" inputmode="decimal" step="any" data-ytm="aa_ytm:5" aria-label="AA- 2Y"></td></tr><tr><td>2.5Y</td><td><input type="number" inputmode="decimal" step="any" data-ytm="gov_ytm:6" aria-label="국고채 2.5Y"></td><td><input type="number" inputmode="decimal" step="any" data-ytm="aa_ytm:6" aria-label="AA- 2.5Y"></td></tr><tr><td>3Y</td><td><input type="number" inputmode="decimal" step="any" data-ytm="gov_ytm:7" aria-label="국고채 3Y"></td><td><input type="number" inputmode="decimal" step="any" data-ytm="aa_ytm:7" aria-label="AA- 3Y"></td></tr><tr><td>4Y</td><td><input type="number" inputmode="decimal" step="any" data-ytm="gov_ytm:8" aria-label="국고채 4Y"></td><td><input type="number" inputmode="decimal" step="any" data-ytm="aa_ytm:8" aria-label="AA- 4Y"></td></tr><tr><td>5Y</td><td><input type="number" inputmode="decimal" step="any" data-ytm="gov_ytm:9" aria-label="국고채 5Y"></td><td><input type="number" inputmode="decimal" step="any" data-ytm="aa_ytm:9" aria-label="AA- 5Y"></td></tr><tr><td>7Y</td><td><input type="number" inputmode="decimal" step="any" data-ytm="gov_ytm:10" aria-label="국고채 7Y"></td><td><input type="number" inputmode="decimal" step="any" data-ytm="aa_ytm:10" aria-label="AA- 7Y"></td></tr><tr><td>10Y</td><td><input type="number" inputmode="decimal" step="any" data-ytm="gov_ytm:11" aria-label="국고채 10Y"></td><td><input type="number" inputmode="decimal" step="any" data-ytm="aa_ytm:11" aria-label="AA- 10Y"></td></tr></tbody></table></div></div>
+        <div class="full hint">금리 표만 바꾸고, USD 지분가치·환율·주가 변동성 같은 평가대상 값과 평가기준일은 바꾸지 않습니다.</div>
+      </div>
+    </fieldset></div>
+    <div class="group"><fieldset>
+      <legend>계약 조건 (금액 단위: 백만원)</legend>
+      <div class="grid">
+        <label class="f">계약개시일<input type="date" id="prs-start" data-k="prs.start"></label>
+        <label class="f">계약만료일<input type="date" id="prs-maturity" data-k="prs.maturity"></label>
+        <div class="f full"><span class="flab">계약기간 (개시일~만료일 자동 계산)</span><output class="autoval" id="prs-term-out">–</output></div>
+        <label class="f">평가기준일<input type="date" id="prs-valuation" data-k="prs.valuation"></label>
+        <label class="f">계약금액 (백만원)<input type="text" inputmode="decimal" autocomplete="off" data-money id="prs-notional" data-k="prs.notional"></label>
+        <label class="f">PRS Premium (연, %)<input type="number" inputmode="decimal" step="any" id="prs-premium" data-k="prs.premium" data-pct></label>
+        <label class="f">고정수익 지급주기<select id="prs-pay_months" data-k="prs.pay_months" data-num class="freq"></select></label>
+        <div class="f full"><span class="flab">Premium 지급 시점</span><div class="seg" id="prs-timing" role="radiogroup" aria-label="Premium 지급 시점"><button type="button" role="radio" data-v="선급">선급 (기간 시작일 지급 · 첫 회는 계약 즉시)</button><button type="button" role="radio" data-v="후급">후급 (기간 종료일 지급)</button></div></div>
+        <div class="f full"><span class="flab">지급일이 토·일이면</span><div class="seg" id="prs-roll" role="radiogroup" aria-label="주말 지급일 조정"><button type="button" role="radio" data-v="1">다음 평일(월요일)에 지급</button><button type="button" role="radio" data-v="0">조정 안 함 (그날 지급)</button></div></div>
+        <div class="full hint" id="prs-mat-h"></div>
+      </div>
+    </fieldset></div>
+    <div class="group"><fieldset>
+      <legend>기초주식 · 매각비용</legend>
+      <div class="grid">
+        <label class="f full">USD 지분가치 (100%, $)<input type="text" inputmode="decimal" autocomplete="off" data-money id="prs-usd_equity" data-k="prs.usd_equity"></label>
+        <label class="f">지분율 (%)<input type="number" inputmode="decimal" step="any" id="prs-stake" data-k="prs.stake" data-pct></label>
+        <label class="f">환율 (원/$)<input type="text" inputmode="decimal" autocomplete="off" data-money id="prs-fx" data-k="prs.fx"></label>
+        <label class="f">주가 변동성 (연, %)<input type="number" inputmode="decimal" step="any" id="prs-vol" data-k="prs.vol" data-pct></label>
+        <label class="f">처분부대비용 (%)<input type="number" inputmode="decimal" step="any" id="prs-cost_dispose" data-k="prs.cost_dispose" data-pct></label>
+        <label class="f">증권거래세 (%)<input type="number" inputmode="decimal" step="any" id="prs-cost_tax" data-k="prs.cost_tax" data-pct></label>
+        <label class="f">양도차익 세율 (%)<input type="number" inputmode="decimal" step="any" id="prs-gain_tax" data-k="prs.gain_tax" data-pct placeholder="0"></label>
+        <div class="f full"><span class="flab">양도차익 세금 부담</span><div class="seg" id="prs-taxb" role="radiogroup" aria-label="양도차익 세금 부담"><button type="button" role="radio" data-v="수령자">변동수익 수령자 부담 (정산금에서 차감)</button><button type="button" role="radio" data-v="지급자">변동수익 지급자 부담 (정산금 그대로)</button></div></div>
+        <div class="full hint" id="prs-tax-h"></div>
+        <div class="full hint" id="prs-s0-h"></div>
+      </div>
+    </fieldset></div>
+    <div class="group"><fieldset>
+      <legend>모형 설정</legend>
+      <div class="grid">
+        <label class="f">희망 Tree 간격 (일)<input type="number" inputmode="numeric" step="1" min="1" id="prs-gap_days" data-k="prs.gap_days"></label>
+        <label class="f">최대 Step 수<input type="number" inputmode="numeric" step="1" min="10" max="2000" id="prs-max_steps" data-k="prs.max_steps"></label>
+        <label class="f">일수 기준 (일/년)<input type="number" inputmode="numeric" step="1" id="prs-day_basis" data-k="prs.day_basis"></label>
+        <label class="f">Bootstrapping 이표 횟수<select id="prs-coupon_freq" data-k="prs.coupon_freq" data-num><option value="1">연 1회</option><option value="2">연 2회</option><option value="4">연 4회</option></select></label>
+      </div>
+    </fieldset></div>
+    </div>
+    <div class="col col-out">
+    <div class="ticket">
+      <div class="eyebrow"><span>PRS (Price Return Swap) 공정가치 (A + B) · 백만원 · <b id="prs-model-tag"></b></span><span id="prs-side"></span></div>
+      <div class="loaded-tag" id="prs-loaded" hidden></div>
+      <div class="npv" id="prs-fv">–</div>
+      <div class="err" id="prs-err" hidden></div>
+      <div class="opt-warn" id="prs-warn" hidden></div>
+      <div class="stats">
+        <div class="stat"><span id="prs-a-lab">고정수익 PV (Present Value, A)</span><b id="prs-a">–</b></div>
+        <div class="stat"><span id="prs-b-lab">변동수익 정산분 PV (B)</span><b id="prs-b">–</b></div>
+        <div class="stat"><span id="prs-bp-lab">변동 정산분 중 양(+) PV (수취)</span><b id="prs-bp">–</b></div>
+        <div class="stat"><span>변동 정산분 중 음(−) PV (지급)</span><b id="prs-bn">–</b></div>
+        <div class="stat" id="prs-tax-stat" hidden><span id="prs-tax-lab">양도차익 세금 PV</span><b id="prs-tax">–</b></div>
+        <div class="stat" id="prs-kpv-stat" hidden><span>계약금액 K 현재가치 (국고채, 만기)</span><b id="prs-kpv">–</b></div>
+        <div class="stat"><span>기초주식 가치 (S0)</span><b id="prs-s0">–</b></div>
+        <div class="stat"><span>계약금액 (K)</span><b id="prs-k">–</b></div>
+        <div class="stat"><span>만기일 · 잔여일수</span><b id="prs-mat">–</b></div>
+        <div class="stat"><span>Step 수 · 간격</span><b id="prs-n">–</b></div>
+        <div class="stat"><span>양(+)의 정산 확률 q</span><b id="prs-q">–</b></div>
+        <div class="stat"><span>u · d · p(첫 스텝)</span><b id="prs-ud">–</b></div>
+        <div class="stat"><span>무위험 수익률 (국고채 spot, 만기)</span><b id="prs-rf">–</b></div>
+        <div class="stat"><span>무위험 선도금리 구간 (트리 기간)</span><b id="prs-rf-rng">–</b></div>
+        <div class="stat"><span id="prs-alt-lab">다른 모형 공정가치</span><b id="prs-alt">–</b></div>
+        <div class="stat"><span>모형 차이 (현재 − 다른 모형)</span><b id="prs-alt-d">–</b></div>
+      </div>
+    </div>
+    <div class="group shift psim"><fieldset>
+      <legend>주가(지분가치) · 환율 · 주가 변동성 · 금리 · Premium 시뮬레이션</legend>
+      <div class="readout" id="prs-readout"></div>
+      <div class="slider ">
+        <div class="srow"><label for="prs-sim-eq">주가(지분가치) 변화</label><output id="prs-sim-eq-out">0</output></div>
+        <div class="srange">
+          <button type="button" class="pnudge" data-for="prs-sim-eq" data-nudge="-1" aria-label="주가(지분가치) 변화 내리기">−</button>
+          <input type="range" min="-30" max="30" step="1" value="0" id="prs-sim-eq" data-pshift="eq">
+          <button type="button" class="pnudge" data-for="prs-sim-eq" data-nudge="1" aria-label="주가(지분가치) 변화 올리기">+</button>
+        </div>
+        <div class="scale"><span>−30%</span><span>기준</span><span>+30%</span></div>
+      </div>
+      <div class="slider usd">
+        <div class="srow"><label for="prs-sim-fx">환율 변화</label><output id="prs-sim-fx-out">0</output></div>
+        <div class="srange">
+          <button type="button" class="pnudge" data-for="prs-sim-fx" data-nudge="-1" aria-label="환율 변화 내리기">−</button>
+          <input type="range" min="-200" max="200" step="5" value="0" id="prs-sim-fx" data-pshift="fx">
+          <button type="button" class="pnudge" data-for="prs-sim-fx" data-nudge="1" aria-label="환율 변화 올리기">+</button>
+        </div>
+        <div class="scale"><span>−200원</span><span>기준</span><span>+200원</span></div>
+      </div>
+      <div class="slider">
+        <div class="srow"><label for="prs-sim-v">주가 변동성 σ</label><output id="prs-sim-v-out">0</output></div>
+        <div class="srange">
+          <button type="button" class="pnudge" data-for="prs-sim-v" data-nudge="-1" aria-label="주가 변동성 내리기">−</button>
+          <input type="range" min="0" max="100" step="0.5" value="0" id="prs-sim-v" data-pshift="v" data-abs="vol">
+          <button type="button" class="pnudge" data-for="prs-sim-v" data-nudge="1" aria-label="주가 변동성 올리기">+</button>
+        </div>
+        <div class="scale"><span>0%</span><span>50%</span><span>100%</span></div>
+      </div>
+      <div class="slider">
+        <div class="srow"><label for="prs-sim-r">금리 평행이동</label><output id="prs-sim-r-out">0</output></div>
+        <div class="srange">
+          <button type="button" class="pnudge" data-for="prs-sim-r" data-nudge="-1" aria-label="금리 평행이동 내리기">−</button>
+          <input type="range" min="-100" max="100" step="1" value="0" id="prs-sim-r" data-pshift="r">
+          <button type="button" class="pnudge" data-for="prs-sim-r" data-nudge="1" aria-label="금리 평행이동 올리기">+</button>
+        </div>
+        <div class="scale"><span>−100bp</span><span>기준</span><span>+100bp</span></div>
+      </div>
+      <div class="slider">
+        <div class="srow"><label for="prs-sim-pr">PRS Premium</label><output id="prs-sim-pr-out">0</output></div>
+        <div class="srange">
+          <button type="button" class="pnudge" data-for="prs-sim-pr" data-nudge="-1" aria-label="PRS Premium 내리기">−</button>
+          <input type="range" min="0" max="15" step="0.05" value="0" id="prs-sim-pr" data-pshift="pr" data-abs="premium">
+          <button type="button" class="pnudge" data-for="prs-sim-pr" data-nudge="1" aria-label="PRS Premium 올리기">+</button>
+        </div>
+        <div class="scale"><span>0%</span><span>7.5%</span><span>15%</span></div>
+      </div>
+
+      <div class="sens">
+        <div class="prs-viz" id="prs-viz">
+          <div class="prs-chart"><h3>두 레그의 현재가치 — 막대 차이가 평가금액 <span class="unit"></span></h3><div class="bchart" id="prs-leg"></div>
+            <p class="cap" id="prs-leg-cap">받는 쪽 B(변동수익 정산분)와 주는 쪽 A(고정수익 Premium)의 현재가치를 나란히 놓았습니다. 가운데 막대가 둘의 차이, 곧 공정가치입니다. 점선은 슬라이더를 움직이기 전(기준) 위치입니다.</p>
+            <div class="tablewrap sens-tbl" id="prs-leg-rec" hidden></div></div>
+          <div class="prs-chart"><h3>슬라이더 효과 — 기준에서 시나리오까지 (폭포 그래프) <span class="unit"></span></h3><div class="bchart" id="prs-wf"></div>
+            <p class="cap">주가(지분가치) → 환율 → 주가 변동성 → 금리 → Premium 순서로 하나씩 더했을 때 공정가치가 얼마나 바뀌는지 보여줍니다. 초록은 증가, 빨강은 감소입니다. 변수끼리 서로 영향을 주므로 더하는 순서에 따라 각 효과는 조금 달라질 수 있습니다.</p></div>
+          <div class="prs-chart prs-bpn"><h3>변동 정산분 — 양(+) 수취분과 음(−) 지급분 <span class="unit"></span></h3>
+            <div class="tablewrap sens-tbl" id="prs-bpn-tbl"></div>
+            <p class="cap" id="prs-bpn-cap"></p></div>
+        </div>
+      </div>
+      <p class="cap prs-note">※ 금리 평행이동 효과는 주가(지분가치)와 연동하지 않습니다. 금리가 바뀌어도 기초주식 가치 S0는 그대로 두고 계산합니다.</p>
+      <div class="srow"><span class="hint">시나리오 전용이라 입력 칸의 값은 바뀌지 않습니다.</span><button class="btn" id="prs-sim-reset">원위치</button></div>
+    </fieldset></div>
+    <div class="card">
+      <h2>할인 금리커브 (spot, 시나리오 금리 반영)</h2>
+      <div id="prs-curve"></div>
+    </div>
+    <div class="card">
+      <h2><span id="prs-cf-title">고정수익 지급분 현재가치 (회차별)</span> <span class="unit">· 단위: 백만원</span></h2>
+      <div id="prs-cf"></div>
+    </div>
+    <details><summary>고정 레그 지급 스케줄 표 (Premium · 순수 CRR은 계약금액 K 포함)</summary><div class="tablewrap" id="prs-tbl"></div></details>
+    <details><summary>계산 방식</summary><div class="cap" style="padding:0 16px 14px;max-width:none" id="prs-how">
+      <p><b>A 고정수익:</b> 계약금액 × Premium × 일수/365를 분기 선취로 지급합니다. 평가기준일 이후(당일 포함) 지급분을 <span class="prs-n-aa">AA-</span> spot으로 할인한 합계이며, 지급이므로 음수입니다.</p>
+      <p><b>B 변동수익 정산분:</b> 만기 노드 값 = 기초주식 가치 × (1 − 매각비용) − 계약금액. CRR (Cox–Ross–Rubinstein) 이항트리(u = e<sup>σ√dt</sup>)를 역산하며, 위험중립확률 p는 국고채 선도금리로, 할인율은 q·국고채 선도 + (1−q)·AA- 선도로 둡니다. q는 그 노드에서 만기에 양(+)의 정산이 될 확률입니다. (CVA·DVA 조정 방식)</p>
+      <p><b>순수 CRR:</b> 위험중립확률 p와 노드 할인율을 모두 국고채 선도금리로 둡니다. 고정수익 A도 국고채 spot으로 할인합니다. 신용위험을 할인율에 넣지 않으므로 B는 기초주식 가치 × (1 − 매각비용) − 계약금액 × 국고채 할인계수와 같아지고, 정산금이 만기 주가에 대해 직선이라 주가 변동성과 무관합니다. 신용위험은 별도의 CVA·DVA로 반영해야 합니다.</p>
+      <p><b>순수 CRR 모형:</b> 레그를 고정 = Premium + 계약금액 K, 변동 = 만기 주식 매각대금 S·(1−비용)으로 나눕니다. 이항트리(위험중립확률·할인 모두 국고채 선도금리)는 주식 레그만 계산하며 그 값은 S0·(1−비용)과 같고, K와 Premium은 국고채 spot으로 할인합니다. 트리 스텝은 만기일에 정확히 끝나도록 맞춥니다. 정산분 분해(A·B)와 비교하면 두 레그가 각각 K의 현재가치만큼 다르고 공정가치는 같습니다.</p>
+      <p><b>지급일 조정:</b> Premium 지급일과 만기 정산일이 토·일이면 다음 평일(월요일)에 지급한 것으로 보고 그 날짜까지 할인합니다. 고정수익 금액의 일수는 원래 기간(개시일 기준 지급주기) 그대로 계산하며, 공휴일은 반영하지 않습니다. 만기 정산일이 밀리면 이항트리도 그 날짜까지 계산합니다. 버튼으로 끌 수 있습니다.</p>
+      <p><b>변동 정산분 양(+)·음(−) 분리:</b> 만기 정산분 S·(1−비용) − K를 양수 부분 max(·,0)과 음수 부분 min(·,0)으로 나눠 각각 같은 트리·같은 확률·같은 할인율로 현재가치합니다. 둘을 더하면 B(변동수익 정산분 현재가치)와 같습니다. 양수 부분은 수취할 금액, 음수 부분은 지급할 금액이며, 양도차익 세금이 수령자 부담이면 양수 부분은 세후 금액입니다.</p>
+      <p><b>양도차익 세금:</b> 만기 노드마다 매각대금 S·(1−비용)이 계약금액 K를 넘는 금액 × 세율을 세금으로 두고, 정산분과 같은 확률·할인율로 역산해 현재가치를 구합니다. <b>변동수익 수령자 부담</b>이면 정산금이 그만큼 줄어드므로 B(순수 CRR은 변동 레그)에서 빼고, <b>변동수익 지급자 부담</b>이면 상대방이 내므로 평가금액은 그대로이며 세금 현재가치는 참고로만 보여줍니다. 세금은 이익이 날 때만 생기는 비대칭 구조라, 세율이 0보다 크면 순수 CRR에서도 공정가치가 주가 변동성에 따라 달라집니다.</p>
+      <p><b>금리커브:</b> 1년 이하는 YTM을 spot으로, 1년 초과 이표일은 이표채 bootstrapping, 그 사이는 spot 선형보간합니다. 금리 평행이동은 <span class="prs-n-gov">국고채</span>·<span class="prs-n-aa">AA-</span> spot에 같은 폭을 더합니다.</p>
+    </div></details>
+    </div>
+  </section>
+  </div>
+
+  <!-- ───────── 내재파생 사채 ───────── -->
+  <div class="view" id="view-cb" hidden>
+  <section class="panel" id="panel-cb">
+    <div class="col col-in">
+    <div class="group saves" id="cb-saves"><fieldset>
+      <legend>평가 저장 · 불러오기</legend>
+      <div class="grid">
+        <label class="f full">평가계약명<input type="text" id="cb-save-name" maxlength="40" placeholder="예: C사 제3회 CB" autocomplete="off"></label>
+        <div class="full save-row"><button type="button" class="btn primary" id="cb-save-btn">현재 평가 저장</button><span class="hint" id="cb-save-count"></span></div>
+        <label class="f">계약 선택<select id="cb-pick-name"><option value="">저장된 평가 없음</option></select></label>
+        <label class="f">평가시점 선택<select id="cb-pick-time" disabled><option value="">—</option></select></label>
+      </div>
+      <div class="save-msg" id="cb-save-msg" aria-live="polite"></div>
+      <div class="save-foot"><span class="hint" id="cb-save-where"></span><button type="button" class="btn ghost" id="cb-del-btn" disabled>선택한 평가 삭제</button></div>
+    </fieldset></div>
+    <div class="group"><fieldset>
+      <legend>공시 사례 불러오기</legend>
+      <div class="grid">
+        <label class="f full">사례<select id="cb-preset"></select></label>
+        <div class="full opt-r"><span class="hint" id="cb-preset-h"></span><button type="button" class="btn" id="cb-preset-btn">입력값에 반영</button></div>
+        <div class="full save-msg" id="cb-preset-msg"></div>
+      </div>
+    </fieldset></div>
+    <div class="group"><fieldset>
+      <legend>상품 · 발행 조건</legend>
+      <div class="grid">
+        <label class="f full">상품 종류<select id="cb-kind" data-k="cb.kind"><option value="CB">전환사채 (CB · Convertible Bond)</option><option value="EB">교환사채 (EB · Exchangeable Bond)</option><option value="BW">신주인수권부사채 (BW · Bond with Warrant)</option><option value="SB">콜·풋 옵션부 일반사채 (SB · Straight Bond)</option></select></label>
+        <label class="f">발행일<input type="date" id="cb-issue" data-k="cb.issue"></label>
+        <label class="f">만기일<input type="date" id="cb-maturity" data-k="cb.maturity"></label>
+        <label class="f">평가일<input type="date" id="cb-valuation" data-k="cb.valuation"></label>
+        <label class="f">권면총액 (원)<input type="text" inputmode="decimal" autocomplete="off" data-money id="cb-face_total" data-k="cb.face_total"></label>
+        <label class="f">표면이자율 (연, %)<input type="number" inputmode="decimal" step="any" id="cb-coupon" data-k="cb.coupon" data-pct></label>
+        <label class="f">이자지급주기<select id="cb-pay_months" data-k="cb.pay_months" data-num><option value="0">만기일시</option><option value="1">1개월</option><option value="3">3개월</option><option value="6">6개월</option><option value="12">12개월</option></select></label>
+        <label class="f full">만기보장수익률 (연, %)<input type="number" inputmode="decimal" step="any" id="cb-ytp" data-k="cb.ytp" data-pct><span class="hint" id="cb-red-h"></span></label>
+        <label class="check full"><input type="checkbox" id="cb-step_on" data-k="cb.step_on"> 금리 스텝업 (일정 기간 뒤 표면이자 상향, 만기 액면상환)</label>
+        <label class="f">스텝업 시작 (발행 후 년)<input type="number" inputmode="decimal" step="any" id="cb-step_start" data-k="cb.step_start"></label>
+        <label class="f">스텝업 첫 금리 (%)<input type="number" inputmode="decimal" step="any" id="cb-step_rate" data-k="cb.step_rate" data-pct></label>
+        <label class="f">이후 매년 가산 (%p)<input type="number" inputmode="decimal" step="any" id="cb-step_inc" data-k="cb.step_inc" data-pct></label>
+        <label class="f">금리 상한 (%)<input type="number" inputmode="decimal" step="any" id="cb-step_cap" data-k="cb.step_cap" data-pct></label>
+      </div>
+    </fieldset></div>
+    <div class="group"><fieldset>
+      <legend>조기상환청구권 (풋, 투자자)</legend>
+      <div class="grid">
+        <label class="check full"><input type="checkbox" id="cb-put_on" data-k="cb.put_on"> 조기상환청구권 있음</label>
+        <label class="f">최초 청구일<input type="date" id="cb-put_start" data-k="cb.put_start"></label>
+        <label class="f">이후 청구 주기 (개월)<input type="number" inputmode="numeric" step="1" min="1" id="cb-put_every" data-k="cb.put_every"></label>
+        <label class="f full">조기상환수익률 (연, %)<input type="number" inputmode="decimal" step="any" id="cb-put_yield" data-k="cb.put_yield" data-pct></label>
+      </div>
+    </fieldset></div>
+    <div class="group"><fieldset>
+      <legend>매도청구권 (콜, 발행자)</legend>
+      <div class="grid">
+        <label class="check full"><input type="checkbox" id="cb-call_on" data-k="cb.call_on"> 매도청구권(콜옵션) 있음</label>
+        <label class="f">행사 시작일<input type="date" id="cb-call_start" data-k="cb.call_start"></label>
+        <label class="f">행사 종료일<input type="date" id="cb-call_end" data-k="cb.call_end"></label>
+        <label class="f">콜 수익률 (연, %)<input type="number" inputmode="decimal" step="any" id="cb-call_yield" data-k="cb.call_yield" data-pct></label>
+        <label class="f">대상 비율 (권면의 %)<input type="number" inputmode="decimal" step="any" id="cb-call_ratio" data-k="cb.call_ratio" data-pct></label>
+        <label class="check full"><input type="checkbox" id="cb-call_par" data-k="cb.call_par"> 액면가로 상환 (발행회사 중도상환권, 콜 수익률 무시)</label>
+        <label class="check full"><input type="checkbox" id="cb-call_coupon_only" data-k="cb.call_coupon_only"> 이자지급일에만 행사 가능</label>
+      </div>
+    </fieldset></div>
+    <div class="group" id="cb-eq-group"><fieldset>
+      <legend id="cb-eq-leg">전환권 · 주식</legend>
+      <div class="grid">
+        <label class="f">주가 (원)<input type="text" inputmode="decimal" autocomplete="off" data-money id="cb-spot" data-k="cb.spot"></label>
+        <label class="f"><span id="cb-cp-lab">전환가액 (원)</span><input type="text" inputmode="decimal" autocomplete="off" data-money id="cb-conv_price" data-k="cb.conv_price"></label>
+        <label class="f"><span id="cb-cs-lab">청구 시작일</span><input type="date" id="cb-conv_start" data-k="cb.conv_start"></label>
+        <label class="f"><span id="cb-ce-lab">청구 종료일</span><input type="date" id="cb-conv_end" data-k="cb.conv_end"></label>
+        <label class="f">주가 변동성 (연, %)<input type="number" inputmode="decimal" step="any" id="cb-vol" data-k="cb.vol" data-pct></label>
+        <label class="f">배당수익률 (연, %)<input type="number" inputmode="decimal" step="any" id="cb-div_yield" data-k="cb.div_yield" data-pct></label>
+        <label class="f" id="w-cb-bw">행사비율 (권면 대비 %)<input type="number" inputmode="decimal" step="any" id="cb-bw_ratio" data-k="cb.bw_ratio" data-pct></label>
+        <label class="f" id="w-cb-bwpay">신주대금 납입방법<select id="cb-bw_pay" data-k="cb.bw_pay"><option value="현금">현금납입 (사채 유지)</option><option value="대용">대용납입 (사채로 납입)</option></select></label>
+        <label class="check full"><input type="checkbox" id="cb-refix_on" data-k="cb.refix_on"> 리픽싱(시가하락 조정) 반영</label>
+        <label class="f">리픽싱 하한 (최초가 대비 %)<input type="number" inputmode="decimal" step="any" id="cb-refix_floor" data-k="cb.refix_floor" data-pct></label>
+        <label class="f">리픽싱 시작일<input type="date" id="cb-refix_start" data-k="cb.refix_start"></label>
+        <div class="full hint" id="cb-eq-h"></div>
+      </div>
+    </fieldset></div>
+    <div class="group"><fieldset>
+      <legend>금리 · 모형</legend>
+      <div class="grid">
+        <div class="full opt-r"><span class="hint">국고채 YTM (Yield to Maturity, 연 %) — 1년 이하는 3·6·9개월·1년, 빈칸은 앞뒤 만기로 선형보간</span><span class="rc-pick"><button type="button" class="btn rc-btn" id="cb-rc">공통 금리커브 가져오기</button><button type="button" class="btn" id="cb-mkt-btn">ECOS 국고채 반영</button></span></div>
+        <div class="full save-msg" id="cb-mkt-msg"></div>
+        <div class="full"><div class="rcp-box"><div class="rcp-head">가져올 금리 선택 <span class="hint">고른 뒤 위의 '공통 금리커브 가져오기'를 누르세요</span></div><div class="rcp" data-rcp="cb.pick" data-def="ktb"><span class="rcp-lab">국고채 YTM 열</span><div class="seg rcp-seg" role="radiogroup" aria-label="국고채 YTM 열"><button type="button" role="radio" data-v="ktb">원화 국고채</button><button type="button" role="radio" data-v="ust">달러 국고채</button><button type="button" role="radio" data-v="corp">회사채</button></div><select class="rc-sel rcp-grade" aria-label="회사채 신용등급"></select></div></div></div>
+        <div class="full tablewrap ytm-tbl"><table><thead><tr><th>만기</th><th id="cb-th-gov">국고채 YTM</th></tr></thead><tbody><tr><td>3M</td><td><input type="number" inputmode="decimal" step="any" data-cytm="0" aria-label="국고채 3M"></td></tr><tr><td>6M</td><td><input type="number" inputmode="decimal" step="any" data-cytm="1" aria-label="국고채 6M"></td></tr><tr><td>9M</td><td><input type="number" inputmode="decimal" step="any" data-cytm="2" aria-label="국고채 9M"></td></tr><tr><td>1Y</td><td><input type="number" inputmode="decimal" step="any" data-cytm="3" aria-label="국고채 1Y"></td></tr><tr><td>2Y</td><td><input type="number" inputmode="decimal" step="any" data-cytm="4" aria-label="국고채 2Y"></td></tr><tr><td>3Y</td><td><input type="number" inputmode="decimal" step="any" data-cytm="5" aria-label="국고채 3Y"></td></tr><tr><td>5Y</td><td><input type="number" inputmode="decimal" step="any" data-cytm="6" aria-label="국고채 5Y"></td></tr><tr><td>10Y</td><td><input type="number" inputmode="decimal" step="any" data-cytm="7" aria-label="국고채 10Y"></td></tr><tr><td>20Y</td><td><input type="number" inputmode="decimal" step="any" data-cytm="8" aria-label="국고채 20Y"></td></tr><tr><td>30Y</td><td><input type="number" inputmode="decimal" step="any" data-cytm="9" aria-label="국고채 30Y"></td></tr></tbody></table></div>
+        <label class="f">신용스프레드 (bp)<input type="number" inputmode="decimal" step="any" id="cb-credit_spread" data-k="cb.credit_spread" data-bp></label>
+        <div class="full rc-pick"><label class="f">발행사 신용등급<select id="cb-cs-grade"></select></label><button type="button" class="btn" id="cb-cs-btn">등급 커브로 신용스프레드 계산</button></div>
+        <div class="full save-msg" id="cb-cs-msg"></div>
+        <label class="f">시장가격 (총액 원, 선택)<input type="text" inputmode="decimal" autocomplete="off" data-money id="cb-market_amt" data-k="cb.market_amt" placeholder="입력하면 OAS 역산"></label>
+        <label class="f">금리 변동성 σr (BDT · Black–Derman–Toy, %) <span id="cb-rv-tag" class="hint"></span><input type="number" inputmode="decimal" step="any" id="cb-rate_vol" data-k="cb.rate_vol" data-pct></label>
+        <label class="f">트리 간격 (일)<input type="number" inputmode="numeric" step="1" min="1" id="cb-step_days" data-k="cb.step_days"></label>
+        <label class="f">Bootstrapping 이표 횟수<select id="cb-coupon_freq" data-k="cb.coupon_freq" data-num><option value="1">연 1회</option><option value="2">연 2회</option><option value="4">연 4회</option></select></label>
+        <div class="full rvm-box">
+          <div class="rvm-head"><span class="flab" style="margin:0">금리 변동성 매트릭스 (스왑션 Black 변동성, %)</span><button type="button" class="btn" id="cb-rvm-btn" aria-pressed="false">금리 변동성 매트릭스 입력하기</button></div>
+          <div class="hint" id="cb-rvm-h"></div>
+          <div class="tablewrap rvm-tbl" id="cb-rvm-tbl"></div>
+          <div class="rvm-tools"><button type="button" class="btn ghost" id="cb-rvm-fill">고정 σr 값으로 채우기</button><button type="button" class="btn ghost" id="cb-rvm-clear">모두 지우기</button></div>
+          <div class="hint" id="cb-rvm-out"></div>
+        </div>
+      </div>
+    </fieldset></div>
+    </div>
+    <div class="col col-out">
+    <div class="ticket">
+      <div class="eyebrow"><span id="cb-eyebrow">공정가치 (경과이자 포함) · 원</span><span id="cb-side"></span></div>
+      <div class="loaded-tag" id="cb-loaded" hidden></div>
+      <div class="cb-head"><div class="npv" id="cb-fv">–</div><div class="zbox" id="cb-z"></div></div>
+      <div class="unit-line" id="cb-unit"></div>
+      <div class="err" id="cb-err" hidden></div>
+      <div class="opt-warn" id="cb-warn" hidden></div>
+      <div class="stats">
+        <div class="stat"><span>일반사채 (옵션 없음)</span><b id="cb-sb">–</b></div>
+        <div class="stat"><span>사채 가치 (풋·콜 포함)</span><b id="cb-host">–</b></div>
+        <div class="stat"><span id="cb-opt-lab">전환권 가치</span><b id="cb-opt">–</b></div>
+        <div class="stat"><span>패리티 · 프리미엄</span><b id="cb-par">–</b></div>
+        <div class="stat"><span>만기상환율 · 경과이자</span><b id="cb-red">–</b></div>
+        <div class="stat"><span>공정가치 기준 YTM (Yield to Maturity)</span><b id="cb-ytm">–</b></div>
+        <div class="stat"><span>Z-spread (사채 가치 기준)</span><b id="cb-zh">–</b></div>
+        <div class="stat"><span>트리 스텝 · 간격</span><b id="cb-n">–</b></div>
+      </div>
+    </div>
+    <div class="group shift csim"><fieldset>
+      <legend>주가 · 주가 변동성 · 금리 · 신용스프레드 시뮬레이션</legend>
+      <div class="readout" id="cb-readout"></div>
+      <div class="slider">
+        <div class="srow"><label for="cb-sim-s">주가 변화</label><output id="cb-sim-s-out">0</output></div>
+        <div class="srange">
+          <button type="button" class="cnudge" data-for="cb-sim-s" data-nudge="-1" aria-label="주가 변화 내리기">−</button>
+          <input type="range" min="-50" max="50" step="1" value="0" id="cb-sim-s" data-cshift="s">
+          <button type="button" class="cnudge" data-for="cb-sim-s" data-nudge="1" aria-label="주가 변화 올리기">+</button>
+        </div>
+        <div class="scale"><span>−50%</span><span>기준</span><span>+50%</span></div>
+      </div>
+      <div class="slider">
+        <div class="srow"><label for="cb-sim-v">주가 변동성 변화</label><output id="cb-sim-v-out">0</output></div>
+        <div class="srange">
+          <button type="button" class="cnudge" data-for="cb-sim-v" data-nudge="-1" aria-label="주가 변동성 변화 내리기">−</button>
+          <input type="range" min="-20" max="20" step="0.5" value="0" id="cb-sim-v" data-cshift="v">
+          <button type="button" class="cnudge" data-for="cb-sim-v" data-nudge="1" aria-label="주가 변동성 변화 올리기">+</button>
+        </div>
+        <div class="scale"><span>−20%p</span><span>기준</span><span>+20%p</span></div>
+      </div>
+      <div class="slider">
+        <div class="srow"><label for="cb-sim-r">금리 평행이동</label><output id="cb-sim-r-out">0</output></div>
+        <div class="srange">
+          <button type="button" class="cnudge" data-for="cb-sim-r" data-nudge="-1" aria-label="금리 평행이동 내리기">−</button>
+          <input type="range" min="-100" max="100" step="1" value="0" id="cb-sim-r" data-cshift="r">
+          <button type="button" class="cnudge" data-for="cb-sim-r" data-nudge="1" aria-label="금리 평행이동 올리기">+</button>
+        </div>
+        <div class="scale"><span>−100bp</span><span>기준</span><span>+100bp</span></div>
+      </div>
+      <div class="slider">
+        <div class="srow"><label for="cb-sim-c">신용스프레드 변화</label><output id="cb-sim-c-out">0</output></div>
+        <div class="srange">
+          <button type="button" class="cnudge" data-for="cb-sim-c" data-nudge="-1" aria-label="신용스프레드 변화 내리기">−</button>
+          <input type="range" min="-200" max="200" step="5" value="0" id="cb-sim-c" data-cshift="c">
+          <button type="button" class="cnudge" data-for="cb-sim-c" data-nudge="1" aria-label="신용스프레드 변화 올리기">+</button>
+        </div>
+        <div class="scale"><span>−200bp</span><span>기준</span><span>+200bp</span></div>
+      </div>
+
+      <div class="sens">
+        <div class="prs-viz">
+          <div class="prs-chart"><h3>공정가치 구성 — 사채 + 옵션 <span class="unit">· 총액 원</span></h3><div class="bchart" id="cb-comp"></div>
+            <p class="cap">옵션 없는 일반사채에서 출발해 조기상환청구권(풋)을 더하고 매도청구권(콜)을 빼고, 전환권·신주인수권을 더하면 공정가치가 됩니다. 점선은 슬라이더를 움직이기 전(기준) 위치입니다.</p></div>
+          <div class="prs-chart"><h3>슬라이더 효과 (폭포 그래프) <span class="unit">· 총액 원</span></h3><div class="bchart" id="cb-wf"></div>
+            <p class="cap">주가 → 주가 변동성 → 금리 → 신용스프레드 순서로 하나씩 반영했을 때 공정가치가 얼마나 바뀌는지 보여줍니다. 변수끼리 영향을 주므로 순서에 따라 각 효과는 조금 달라질 수 있습니다.</p></div>
+        </div>
+        <div class="prs-chart" id="cb-prof-wrap" style="margin-top:18px"><h3>주가에 따른 가치 <span class="unit">· 총액 원</span></h3>
+          <ul class="key" id="cb-prof-key"></ul><div id="cb-prof"></div>
+          <p class="cap">주가가 낮으면 공정가치는 사채 가치(채권 바닥)에 붙고, 주가가 높으면 패리티(전환·행사 가치)를 따라갑니다. 다른 입력값은 현재 슬라이더 값에 둡니다.</p></div>
+      </div>
+      <p class="cap prs-note">※ 주가 슬라이더는 금리·신용스프레드와 연동하지 않습니다. 금리 평행이동은 국고채 spot 전 구간에 같은 폭을 더합니다.</p>
+      <div class="srow"><span class="hint">시나리오 전용이라 입력 칸의 값은 바뀌지 않습니다.</span><button class="btn" id="cb-sim-reset">원위치</button></div>
+    </fieldset></div>
+    <div class="card">
+      <h2>할인 금리커브 (spot, 시나리오 반영)</h2>
+      <div id="cb-curve"></div>
+    </div>
+    <div class="card">
+      <h2>약정 현금흐름 <span class="unit">· 총액 원</span></h2>
+      <div id="cb-cf"></div>
+    </div>
+    <details><summary>현금흐름 · 풋/콜 일정 표</summary><div class="tablewrap" id="cb-tbl"></div></details>
+    <details><summary>계산 방식</summary><div class="cap" style="padding:0 16px 14px;max-width:none">
+      <p><b>제로커브:</b> ECOS 고시 만기(3M CD 91일, 국고채 1·2·3·5·10·20·30년) YTM을 PRS 계산기와 같은 방식으로 bootstrapping해 30년까지 분기 spot 커브를 만들고, 위험할인커브는 spot + 신용스프레드로 둡니다.</p>
+      <p><b>사채(주계약):</b> BDT 금리 이항트리를 위험할인커브에 맞춰 보정한 뒤 역산합니다. 조기상환청구일에는 max(보유가치, 조기상환금액), 매도청구 기간에는 min(보유가치, 콜 가격)을 적용하고, 매도청구권은 대상 비율만큼 가중평균합니다. 옵션이 없으면 트리 값은 위험할인 DCF (Discounted Cash Flow)와 같습니다.</p>
+      <p><b>CB · EB:</b> 주가 CRR (Cox–Ross–Rubinstein) 이항트리에 TF(Tsiveriotis–Fernandes) 분해를 씁니다. 주식으로 바뀌는 몫은 무위험 선도금리로, 현금으로 받는 몫은 위험 선도금리로 할인하며, 노드마다 콜 → 풋 → 전환 순서로 판단합니다. 전환권 가치 = 전체 공정가치 − 사채 가치(풋·콜 포함).</p>
+      <p><b>BW:</b> 사채 가치(금리트리)에 신주인수권(주가트리, 행사기간 중 아메리칸 콜, 무위험 할인)을 더합니다. 희석효과와 대용납입은 반영하지 않습니다.</p>
+      <p><b>리픽싱:</b> 경로에 따라 값이 달라지는 조건이라 트리에서는 "그 노드 주가 기준"으로 근사합니다(전환가 = max(하한, min(최초 전환가, 노드 주가))). 한 번 내려간 전환가가 주가 회복 후에도 유지되는 효과는 덜 반영되므로 실제보다 다소 낮게 나올 수 있습니다.</p>
+      <p><b>OAS (Option-Adjusted Spread):</b> 옵션(풋·콜·전환권)의 가치를 트리에서 걷어낸 뒤 남는, 국고채 위 신용 스프레드입니다. 시장가격을 넣으면 모형 가격이 그 가격과 같아지는 신용스프레드를 역산하고, 비워두면 입력한 신용스프레드가 곧 OAS입니다.</p>
+      <p><b>Z-spread (Zero-volatility spread):</b> 약정 현금흐름(표면이자 + 만기상환금)을 국고채 spot + s로 할인한 값이 공정가치와 같아지는 s입니다. 옵션 가치가 클수록 낮아지고(음수 가능), 옵션 없는 일반사채에서는 입력한 신용스프레드와 같습니다.</p>
+    </div></details>
+    </div>
+  </section>
+  </div>
+
+  <!-- ───────── 통화선도 ───────── -->
+  <div class="view" id="view-fx" hidden>
+  <section class="panel" id="panel-fx">
+    <div class="col col-in">
+    <div class="group saves" id="fx-saves"><fieldset>
+      <legend>평가 저장 · 불러오기</legend>
+      <div class="grid">
+        <label class="f full">평가계약명<input type="text" id="fx-save-name" maxlength="40" placeholder="예: A은행 USD 선물환 매입" autocomplete="off"></label>
+        <div class="full save-row"><button type="button" class="btn primary" id="fx-save-btn">현재 평가 저장</button><span class="hint" id="fx-save-count"></span></div>
+        <label class="f">계약 선택<select id="fx-pick-name"><option value="">저장된 평가 없음</option></select></label>
+        <label class="f">평가시점 선택<select id="fx-pick-time" disabled><option value="">—</option></select></label>
+      </div>
+      <div class="save-msg" id="fx-save-msg" aria-live="polite"></div>
+      <div class="save-foot"><span class="hint" id="fx-save-where"></span><button type="button" class="btn ghost" id="fx-del-btn" disabled>선택한 평가 삭제</button></div>
+    </fieldset></div>
+    <div class="group"><fieldset>
+      <legend>시장데이터</legend>
+      <div class="grid">
+        <div class="full rc-pull"><span class="hint">아래 금리커브 표 바로 위에서 KRW·USD 열에 넣을 금리를 고른 뒤 누르세요.</span><button type="button" class="btn rc-btn" id="fx-rc">공통 금리커브 가져오기</button></div>
+        <label class="f">기준일<input type="date" id="fx-mkt-date"></label>
+        <div class="opt-r" style="align-self:end"><button type="button" class="btn" id="fx-mkt-btn">ECOS 시장데이터 반영</button></div>
+        <div class="full hint" id="fx-mkt-range"></div>
+        <div class="full save-msg" id="fx-mkt-msg"></div>
+      </div>
+    </fieldset></div>
+    <div class="group"><fieldset>
+      <legend>계약 조건</legend>
+      <div class="grid">
+        <label class="f">계약일<input type="date" id="fx-trade" data-k="fx.trade"></label>
+        <label class="f">결제일 (만기)<input type="date" id="fx-maturity" data-k="fx.maturity"></label>
+        <label class="f">평가일<input type="date" id="fx-valuation" data-k="fx.valuation"></label>
+        <label class="f">USD 원금 ($)<input type="text" inputmode="decimal" autocomplete="off" data-money id="fx-usd_notional" data-k="fx.usd_notional"></label>
+        <label class="f">거래 방향<select id="fx-direction" data-k="fx.direction"><option>USD 매입</option><option>USD 매도</option></select></label>
+        <label class="f">약정환율 (원/$)<input type="text" inputmode="decimal" autocomplete="off" data-money id="fx-contract_rate" data-k="fx.contract_rate"></label>
+        <div class="full hint" id="fx-term-h"></div>
+      </div>
+    </fieldset></div>
+    <div class="group"><fieldset>
+      <legend>환율</legend>
+      <div class="grid">
+        <label class="f">현물환율 (원/$)<input type="text" inputmode="decimal" autocomplete="off" data-money id="fx-spot" data-k="fx.spot"></label>
+        <label class="f">시장 스왑포인트 (원, 선택)<input type="number" inputmode="decimal" step="any" id="fx-swap_point" data-k="fx.swap_point" placeholder="비우면 금리평형"></label>
+        <div class="full hint" id="fx-sp-h">스왑포인트 = 결제일 선도환율 − 현물환율. 비워두면 아래 금리커브로 금리평형 선도환율을 계산하고, 넣으면 그 값으로 선도환율을 정합니다(할인은 KRW 커브).</div>
+      </div>
+    </fieldset></div>
+    <div class="group"><fieldset>
+      <legend>금리커브 (통화선도 전용, Par 금리 %)</legend>
+      <div class="grid">
+        <div class="full hint" id="fx-curve-src"></div>
+        <div class="full"><div class="rcp-box"><div class="rcp-head">가져올 금리 선택 <span class="hint">고른 뒤 위의 '공통 금리커브 가져오기'를 누르세요</span></div><div class="rcp" data-rcp="fx.pick_krw" data-def="ktb"><span class="rcp-lab">KRW 열</span><div class="seg rcp-seg" role="radiogroup" aria-label="KRW 열"><button type="button" role="radio" data-v="ktb">원화 국고채</button><button type="button" role="radio" data-v="ust">달러 국고채</button><button type="button" role="radio" data-v="corp">회사채</button></div><select class="rc-sel rcp-grade" aria-label="회사채 신용등급"></select></div><div class="rcp" data-rcp="fx.pick_usd" data-def="ust"><span class="rcp-lab">USD 열</span><div class="seg rcp-seg" role="radiogroup" aria-label="USD 열"><button type="button" role="radio" data-v="ktb">원화 국고채</button><button type="button" role="radio" data-v="ust">달러 국고채</button><button type="button" role="radio" data-v="corp">회사채</button></div><select class="rc-sel rcp-grade" aria-label="회사채 신용등급"></select></div></div></div>
+        <div class="full tablewrap curve-table ytm-tbl" id="fx-curve-tbl"></div>
+        <div class="full"><button type="button" class="btn" id="fx-curve-copy">금리 스왑 계산기 커브 가져오기</button></div>
+        <div class="full save-msg" id="fx-curve-msg"></div>
+      </div>
+    </fieldset></div>
+    </div>
+    <div class="col col-out">
+    <div class="ticket">
+      <div class="eyebrow"><span>통화선도 평가금액 · 원</span><span id="fx-side"></span></div>
+      <div class="loaded-tag" id="fx-loaded" hidden></div>
+      <div class="npv" id="fx-npv">–</div>
+      <div class="err" id="fx-err" hidden></div>
+      <div class="opt-warn" id="fx-warn" hidden></div>
+      <div class="stats">
+        <div class="stat"><span id="fx-f-lab">결제일 선도환율</span><b id="fx-f">–</b></div>
+        <div class="stat"><span>스왑포인트 (선도 − 현물)</span><b id="fx-sp">–</b></div>
+        <div class="stat"><span>약정환율 대비</span><b id="fx-gap">–</b></div>
+        <div class="stat"><span>만기 정산손익 (할인 전)</span><b id="fx-und">–</b></div>
+        <div class="stat"><span>결제일 · 잔존일수</span><b id="fx-mat">–</b></div>
+        <div class="stat"><span>할인계수 KRW · USD</span><b id="fx-df">–</b></div>
+        <div class="stat"><span>만기 zero KRW · USD</span><b id="fx-z">–</b></div>
+        <div class="stat"><span>현물환율 1원 오를 때</span><b id="fx-delta">–</b></div>
+      </div>
+    </div>
+    <div class="group shift psim fsim"><fieldset>
+      <legend>현물환율 · 금리 시뮬레이션</legend>
+      <div class="readout" id="fx-readout"></div>
+      <div class="slider">
+        <div class="srow"><label for="fx-sim-s">현물환율 변화</label><output id="fx-sim-s-out">0</output></div>
+        <div class="srange">
+          <button type="button" class="fnudge" data-for="fx-sim-s" data-nudge="-1" aria-label="현물환율 변화 내리기">−</button>
+          <input type="range" min="-200" max="200" step="1" value="0" id="fx-sim-s" data-fshift="s">
+          <button type="button" class="fnudge" data-for="fx-sim-s" data-nudge="1" aria-label="현물환율 변화 올리기">+</button>
+        </div>
+        <div class="scale"><span>−200원</span><span>기준</span><span>+200원</span></div>
+      </div>
+      <div class="slider">
+        <div class="srow"><label for="fx-sim-k">KRW 금리 평행이동</label><output id="fx-sim-k-out">0</output></div>
+        <div class="srange">
+          <button type="button" class="fnudge" data-for="fx-sim-k" data-nudge="-1" aria-label="KRW 금리 평행이동 내리기">−</button>
+          <input type="range" min="-200" max="200" step="1" value="0" id="fx-sim-k" data-fshift="k">
+          <button type="button" class="fnudge" data-for="fx-sim-k" data-nudge="1" aria-label="KRW 금리 평행이동 올리기">+</button>
+        </div>
+        <div class="scale"><span>−200bp</span><span>기준</span><span>+200bp</span></div>
+      </div>
+      <div class="slider">
+        <div class="srow"><label for="fx-sim-u">USD 금리 평행이동</label><output id="fx-sim-u-out">0</output></div>
+        <div class="srange">
+          <button type="button" class="fnudge" data-for="fx-sim-u" data-nudge="-1" aria-label="USD 금리 평행이동 내리기">−</button>
+          <input type="range" min="-200" max="200" step="1" value="0" id="fx-sim-u" data-fshift="u">
+          <button type="button" class="fnudge" data-for="fx-sim-u" data-nudge="1" aria-label="USD 금리 평행이동 올리기">+</button>
+        </div>
+        <div class="scale"><span>−200bp</span><span>기준</span><span>+200bp</span></div>
+      </div>
+
+      <div class="sens">
+        <div class="prs-viz">
+          <div class="prs-chart"><h3>슬라이더 효과 (폭포 그래프) <span class="unit">· 원</span></h3><div class="bchart" id="fx-wf"></div>
+            <p class="cap">현물환율 → KRW 금리 → USD 금리 순서로 하나씩 반영했을 때 평가금액이 얼마나 바뀌는지 보여줍니다. 초록은 증가, 빨강은 감소입니다.</p></div>
+          <div class="prs-chart"><h3>현물환율에 따른 평가금액 <span class="unit">· 원</span></h3><div id="fx-prof"></div>
+            <p class="cap" id="fx-prof-cap"></p></div>
+        </div>
+      </div>
+      <p class="cap prs-note">※ 현물환율 슬라이더는 금리와 연동하지 않습니다. 금리 평행이동은 통화선도 금리커브(KRW·USD par 금리) 전 구간에 같은 폭을 더하며, 시장 스왑포인트를 넣은 경우에는 할인(KRW)에만 영향을 줍니다.</p>
+      <div class="srow"><span class="hint">시나리오 전용이라 입력 칸의 값은 바뀌지 않습니다.</span><button class="btn" id="fx-sim-reset">원위치</button></div>
+    </fieldset></div>
+    <div class="card">
+      <h2>할인 금리커브 (zero, 시나리오 반영)</h2>
+      <ul class="key" id="fx-zero-key"></ul>
+      <div id="fx-zero"></div>
+    </div>
+    <div class="card">
+      <h2>기간별 선도환율 <span class="unit">· 원/$</span></h2>
+      <ul class="key" id="fx-curve-key"></ul>
+      <div id="fx-curve"></div>
+    </div>
+    <details><summary>기간별 선도환율 표</summary><div class="tablewrap" id="fx-tbl"></div></details>
+    <details><summary>계산 방식</summary><div class="cap" style="padding:0 16px 14px;max-width:none">
+      <p><b>선도환율:</b> 금리평형(covered interest parity)으로 F = 현물환율 × DF<sub>USD</sub>(T) ÷ DF<sub>KRW</sub>(T)입니다(DF = Discount Factor, 할인계수). 할인계수는 통화선도 전용 금리커브에서 금리 스왑 계산기와 같은 방식(par 금리 → 연복리 제로금리 부트스트래핑, 테너 사이 선형보간, ACT/365)으로 구합니다. 이 커브는 금리 스왑 계산기와 따로 저장되므로 한쪽을 바꿔도 다른 쪽은 그대로입니다. 시장 스왑포인트를 넣으면 F = 현물환율 + 스왑포인트로 둡니다.</p>
+      <p><b>평가금액:</b> USD 매입 = USD 원금 × (F − 약정환율) × DF<sub>KRW</sub>(T), USD 매도는 부호가 반대입니다. 결제일에 받을 USD(원화 환산)와 줄 원화를 각각 현재가치로 바꾼 차이와 같습니다.</p>
+      <p><b>유의:</b> 현물 결제일(T+2) 조정, 통화 베이시스, 거래상대방·자기 신용위험(CVA · Credit Valuation Adjustment, DVA · Debit Valuation Adjustment)은 반영하지 않습니다. 금리평형 선도환율은 시장 고시 선도환율(서울외국환중개 등)과 베이시스만큼 차이가 날 수 있으니, 결산 평가에는 시장 스왑포인트를 넣는 것을 권합니다.</p>
+    </div></details>
+    </div>
+  </section>
+  </div>
+
+  <!-- ───────── 공통 금리커브 ───────── -->
+  <div class="view" id="view-rates" hidden>
+  <section class="panel" id="panel-rates">
+    <div class="col col-in">
+    <div class="group"><fieldset>
+      <legend>기준일 · 시장금리 자료</legend>
+      <div class="grid">
+        <div class="full rc-dpick">
+          <label class="f rc-dfield">기준일<input type="date" id="rc-date" aria-describedby="rc-range"></label>
+          <div class="rc-ymd" role="group" aria-label="기준일 년·월·일 선택">
+            <label class="f">년<select id="rc-y"></select></label>
+            <label class="f">월<select id="rc-m"></select></label>
+            <label class="f">일<select id="rc-d"></select></label>
+          </div>
+        </div>
+        <div class="full opt-r" id="rc-fetch-row" hidden><span class="hint">PC 앱은 인터넷에서 그날 금리를 바로 받아 이 PC에 보관합니다.</span><button type="button" class="btn" id="rc-fetch">인터넷에서 새로 받기</button></div>
+        <div class="full save-msg" id="rc-msg"></div>
+        <div class="full hint" id="rc-range"></div>
+      </div>
+    </fieldset></div>
+    <div class="group"><fieldset>
+      <legend>보관 자료 관리</legend>
+      <div class="hint rh-sum" id="rh-sum"></div>
+      <div id="rh-pc" hidden>
+        <div class="grid">
+          <label class="f">시작일<input type="date" id="rh-from"></label>
+          <label class="f">종료일<input type="date" id="rh-to"></label>
+          <label class="f">받을 날짜<select id="rh-freq"><option value="M">매월 말일 (10년 약 120일)</option><option value="W">매주 금요일 (10년 약 520일)</option><option value="D">모든 영업일 (10년 약 2,600일)</option></select></label>
+          <div class="opt-r" style="align-self:end"><button type="button" class="btn primary" id="rh-run">기간 받기</button></div>
+          <div class="full rh-prog" id="rh-prog" hidden><i id="rh-bar"></i></div>
+          <div class="full save-msg" id="rh-msg"></div>
+          <div class="full hint">이미 보관된 날짜는 건너뜁니다. 하루에 3~5초쯤 걸리며, 받은 자료는 이 PC에 계속 남습니다.</div>
+        </div>
+      </div>
+      <div class="actions"><button type="button" class="btn" id="rh-xlsx">보관 자료 엑셀로 내려받기</button><button type="button" class="btn ghost" id="rh-del" hidden>이 날짜 지우기</button></div>
+      <div class="save-msg" id="rh-xmsg"></div>
+    </fieldset></div>
+    <div class="group"><fieldset>
+      <legend>커브 선택</legend>
+      <nav class="fin-tabs rc-names" id="rc-names" role="tablist" aria-label="커브"></nav>
+      <div class="grid">
+        <label class="f">이표 지급 횟수 (부트스트랩)<select id="rc-freq"><option value="1">연 1회</option><option value="2">연 2회</option><option value="4">연 4회</option><option value="12">연 12회</option></select></label>
+        <label class="f">표시 단위<select id="rc-comp"><option value="a">연복리</option><option value="c">연속복리</option></select></label>
+        <div class="full hint" id="rc-freq-h"></div>
+      </div>
+    </fieldset></div>
+    <div class="group"><fieldset>
+      <legend>고시 수익률 (par 금리로 봄, 연 %)</legend>
+      <div class="full hint">값을 고치면 이 날짜·이 커브에 저장되고, 공통 커브를 쓰는 모든 계산기에 그대로 적용됩니다.</div>
+      <div class="tablewrap ytm-tbl"><table><thead><tr><th>만기</th><th>수익률</th><th>출처</th></tr></thead><tbody id="rc-in"></tbody></table></div>
+      <div class="actions"><button type="button" class="btn" id="rc-reset">자료값으로 되돌리기</button></div>
+    </fieldset></div>
+    </div>
+    <div class="col col-out">
+    <div class="ticket">
+      <div class="eyebrow"><span id="rc-eyebrow">공통 금리커브</span><span id="rc-asof"></span></div>
+      <div class="npv" id="rc-hero">–</div>
+      <div class="side" id="rc-hero-s"></div>
+      <div class="err" id="rc-err" hidden></div>
+      <div class="stats" id="rc-stats"></div>
+    </div>
+    <div class="card">
+      <h2>par · 제로 · 선도금리 <span class="unit" id="rc-chart-u"></span></h2>
+      <ul class="key" id="rc-key"></ul>
+      <div id="rc-chart"></div>
+      <p class="cap">par 금리를 고시 만기 사이에서 직선으로 이어 쓰기 때문에, 기울기가 바뀌는 고시 만기(5·10·20년 등) 근처에서 선도금리가 꺾여 보입니다. 선형보간 방식의 정상적인 결과입니다.</p>
+    </div>
+    <div class="card">
+      <h2>금리 추이 <span class="unit" id="rt-u"></span></h2>
+      <div class="rt-ctl"><label class="f">만기<select id="rt-ten"></select></label></div>
+      <ul class="key" id="rt-key"></ul>
+      <div id="rt-chart"></div>
+      <p class="cap" id="rt-cap"></p>
+    </div>
+    <div class="card">
+      <h2>국고채 대비 신용스프레드 <span class="unit">(제로금리 기준, bp)</span></h2>
+      <div class="tablewrap sens-tbl" id="rc-spread"></div>
+      <p class="cap">5년 초과는 한국신용평가 표에 없어 5년 신용스프레드를 그대로 유지한 값입니다.</p>
+    </div>
+    <details open><summary>선도금리 표 (시작 시점 × 기간)</summary><div class="tablewrap" id="rc-fwd"></div></details>
+    <details><summary>분기 그리드 전체 (par · 할인계수 · 제로 · 3개월 선도)</summary><div class="tablewrap fin-scroll" id="rc-grid"></div></details>
+    <div class="group"><fieldset>
+      <legend>계산 방법</legend>
+      <ol class="fin-help">
+        <li>고시 수익률을 그 만기의 par 금리로 봅니다 (액면 근처 지표물 수익률 ≈ par 금리).</li>
+        <li>3개월 간격 그리드에서 고시 만기 사이를 선형보간합니다. 첫 만기보다 짧거나 끝 만기보다 긴 구간은 가장 가까운 값을 씁니다.</li>
+        <li>1년 이하는 단기 금리로 보고 할인계수 = (1+y)<sup>−t</sup>.</li>
+        <li>1년 초과 이표일은 par 조건으로 순차 부트스트랩: DF<sub>n</sub> = (1 − c·ΣDF<sub>이전 이표일</sub>) ÷ (1 + c), c = par ÷ 이표 횟수.</li>
+        <li>이표일이 아닌 그리드 점의 제로금리는 앞뒤 이표일 제로금리를 선형보간합니다.</li>
+        <li>선도금리 f(t₁,t₂) = (DF(t₁) ÷ DF(t₂))<sup>1/(t₂−t₁)</sup> − 1 (연복리).</li>
+      </ol>
+      <p class="cap">출처 · 국고채 3M~5Y와 회사채 AAA~BBB-: 한국신용평가 등급별 금리스프레드 (자료 KIS자산평가) · 국고채 10·20·30Y: 한국은행 ECOS · 미국채: 미국 재무부 Daily Treasury Par Yield Curve. PRS·사채 계산기의 국고채 bootstrapping과 같은 규칙입니다.</p>
+    </fieldset></div>
+    </div>
+  </section>
+  </div>
+  <div class="view" id="view-fin" hidden>
+  <section class="panel fin-panel" id="panel-fin">
+    <div class="fin-top">
+      <div class="seg fin-mode" id="fin-mode" role="radiogroup" aria-label="화면 방식"><button type="button" role="radio" data-v="ws">워크시트 화면</button><button type="button" role="radio" data-v="kp">키패드 화면</button></div>
+      <button type="button" class="btn" id="fin-float-btn">플로팅 계산기 띄우기 (항상 위)</button>
+      <span class="hint">두 화면은 같은 값을 씁니다. 워크시트에서 넣은 값은 키패드에서, 키패드에서 계산한 값은 워크시트에서 그대로 보입니다. <span id="fin-float-msg"></span></span>
+    </div>
+    <div id="fin-ws-wrap">
+      <nav class="fin-tabs" id="fin-tabs" role="tablist" aria-label="워크시트"></nav>
+      <div class="fin-ws-grid">
+        <div class="group"><fieldset><legend id="fin-ws-title"></legend><div class="hint" id="fin-ws-desc"></div><div class="grid" id="fin-ws-form"></div><div class="save-msg" id="fin-ws-msg" aria-live="polite"></div></fieldset></div>
+        <div class="group fin-side" id="fin-ws-side"></div>
+      </div>
+    </div>
+    <div id="fin-kp-wrap" hidden>
+      <div class="fin-mini" id="fin-mini" hidden>
+        <label class="fin-ontop" id="fin-ontop-wrap"><input type="checkbox" id="fin-ontop" checked> 항상 위에 표시</label>
+        <button type="button" class="btn ghost" id="fin-exit-btn">← 전체 화면으로</button>
+        <span class="fin-mini-note">참고용 계산 도구 · 공식 평가 사용 금지</span>
+      </div>
+      <div class="fin-kp-grid">
+        <div class="calc" id="fin-calc">
+          <div class="calc-disp" id="fin-disp" aria-live="polite">
+            <div class="calc-ind" id="fin-ind"></div>
+            <div class="calc-main"><span class="calc-lab" id="fin-lab"></span><span class="calc-val" id="fin-val">0.00</span></div>
+          </div>
+          <div class="calc-keys" id="fin-keys"></div>
+          <div class="calc-brand">ADVANCED BUSINESS ANALYST 스타일</div>
+        </div>
+        <div class="group fin-side" id="fin-kp-side"></div>
+      </div>
+    </div>
+  </section>
+  </div>
+
+  <footer>
+    <span class="maker-f">Financial Calculator</span>
+    <span>금리 스왑: 엑셀 IRS·CRS 모델과 같은 통화별 단일커브, 연복리 제로금리, 테너 사이 선형보간. 옵션: 엑셀 이항모형(CRR · Cox–Ross–Rubinstein)과 같은 방식.</span>
+    <span>CSA (Credit Support Annex) / OIS (Overnight Index Swap) 할인과 통화 베이시스 커브는 반영하지 않습니다. 작업 중인 입력값은 이 기기에 유지되고, '현재 평가 저장'으로 저장한 평가는 계산기별로 최대 100개까지 보관되고, '저장 결과 조회'에서 종목별·평가시점별로 볼 수 있습니다.</span>
+  </footer>
+</div>
+
+<script src="platform.js"></script>
+<script src="engine.js"></script>
+<script src="pkg/fincalc_engine.js"></script>
+<script src="boot.js"></script>
+</body>
+</html>

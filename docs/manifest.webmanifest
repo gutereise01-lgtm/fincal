@@ -1,0 +1,17 @@
+{
+  "name": "Financial Calculator",
+  "short_name": "재무계산기",
+  "description": "금리스왑 · 통화선도 · 옵션 · PRS · 내재파생 사채 · 금리커브 · 재무계산기",
+  "lang": "ko",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#F4F6FA",
+  "theme_color": "#0F1F45",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icons/icon-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
