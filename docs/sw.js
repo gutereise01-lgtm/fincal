@@ -1,5 +1,5 @@
 /* 오프라인 실행용 서비스 워커. VERSION은 build.sh가 파일 내용 해시로 바꿔 넣는다. */
-const VERSION = '70557c01f1cd';
+const VERSION = '2b5e6b649467';
 const CACHE = 'fincalc-' + VERSION, FONTS = 'fincalc-fonts';
 const SHELL = ['./', 'index.html', 'app.js', 'engine.js', 'platform.js', 'boot.js', 'pkg/fincalc_engine.js', 'pkg/fincalc_engine_bg.wasm',
   'vendor/xlsx.full.min.js', 'manifest.webmanifest', 'icons/apple-touch-icon.png', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-512-maskable.png'];
@@ -11,6 +11,7 @@ self.addEventListener('message', e => { if (e.data === 'skipWaiting') self.skipW
 self.addEventListener('fetch', e => {
   const req = e.request; if (req.method !== 'GET') return;
   const url = new URL(req.url);
+  if (url.origin === location.origin && url.pathname.includes('/cw570/')) return; // CW570 계산기는 자체 서비스 워커 사용
   if (url.origin === location.origin) {
     e.respondWith((async () => {
       const c = await caches.open(CACHE);
